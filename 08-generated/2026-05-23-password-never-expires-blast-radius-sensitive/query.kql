@@ -1,0 +1,62 @@
+// ============================================================
+// Detection: Identities — Password Never Expires on Accounts with Blast Radius or Sensitive Tag
+// Description: Identifies enabled accounts configured with Password Never Expires that carry
+//              a UEBA-computed Blast Radius value (Low / Medium / High) or are tagged as
+//              Sensitive. Credentials that never expire on high-value accounts represent a
+//              persistent privilege escalation path. Results require analyst review to
+//              determine whether each account has a valid policy exception.
+// Severity: Medium
+// Tactic: Persistence (TA0003)
+// Technique: T1098 — Account Manipulation
+// DataConnector: Microsoft Sentinel UEBA (IdentityInfo)
+// Table: IdentityInfo
+// Author: SOC Detection Engineering
+// Version: 1.0
+// LastModified: 2026-05-23
+// ============================================================
+
+// IdentityInfo is a periodic-sync table; arg_max retrieves the latest snapshot per account.
+// KM-002: IsAccountEnabled is a string "1", not a boolean.
+// KM-003: PasswordNeverExpires lives in UserAccountControl[1], not as a scalar field.
+let LatestIdentities = IdentityInfo
+    | summarize arg_max(TimeGenerated, *) by AccountName
+    | where IsAccountEnabled == "1"
+    | where parse_json(UserAccountControl)[1] == 'PasswordNeverExpires';
+
+// Blast Radius — Low
+let IdBlastRadiusLow = LatestIdentities
+    | where BlastRadius == "Low"
+    | extend BlastRadiusLabel = "Low"
+    | project AccountDisplayName, AccountName, EmailAddress, BlastRadiusLabel, Tags;
+
+// Blast Radius — Medium
+let IdBlastRadiusMedium = LatestIdentities
+    | where BlastRadius == "Medium"
+    | extend BlastRadiusLabel = "Medium"
+    | project AccountDisplayName, AccountName, EmailAddress, BlastRadiusLabel, Tags;
+
+// Blast Radius — High
+let IdBlastRadiusHigh = LatestIdentities
+    | where BlastRadius == "High"
+    | extend BlastRadiusLabel = "High"
+    | project AccountDisplayName, AccountName, EmailAddress, BlastRadiusLabel, Tags;
+
+// KM-004: Sensitive accounts use Tags != "[]", not IsSensitive.
+let SensitiveAccounts = LatestIdentities
+    | where Tags != "[]" and isnotempty(Tags)
+    | extend BlastRadiusLabel = ""
+    | project AccountDisplayName, AccountName, EmailAddress, BlastRadiusLabel, Tags;
+
+union isfuzzy=true
+    IdBlastRadiusLow,
+    IdBlastRadiusMedium,
+    IdBlastRadiusHigh,
+    SensitiveAccounts
+| summarize by AccountDisplayName, AccountName, EmailAddress, BlastRadiusLabel, Tags
+// Entity columns for Sentinel entity mapping
+| extend AccountNameEntity = AccountName
+| extend EmailEntity       = EmailAddress
+| sort by AccountDisplayName asc
+
+// Cognitive linter: PASS
+// Linter: cognitive

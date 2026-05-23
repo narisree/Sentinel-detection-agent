@@ -8,7 +8,7 @@ One folder per generated detection rule. Each folder contains `query.kql` and op
 
 | Folder | Date | Rule Name | Severity | MITRE Technique | Confidence |
 |--------|------|-----------|----------|----------------|------------|
-| — | — | No detections generated yet | — | — | — |
+| [2026-05-23-password-never-expires-blast-radius-sensitive/](./2026-05-23-password-never-expires-blast-radius-sensitive/) | 2026-05-23 | Identities — Password Never Expires on Accounts with Blast Radius or Sensitive Tag | Medium | T1098 — Account Manipulation | Medium |
 
 ---
 

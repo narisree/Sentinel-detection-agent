@@ -21,6 +21,7 @@ Last updated: 2026-05-23
 | [DeviceFileEvents.md](./DeviceFileEvents.md) | `DeviceFileEvents` | Microsoft Defender for Endpoint (MDE) | **`Timestamp`** | File creation, modification, deletion, rename; ransomware and exfiltration detection |
 | [DeviceLogonEvents.md](./DeviceLogonEvents.md) | `DeviceLogonEvents` | Microsoft Defender for Endpoint (MDE) | **`Timestamp`** | Device logon events; lateral movement, pass-the-hash, RDP detection |
 | [DeviceRegistryEvents.md](./DeviceRegistryEvents.md) | `DeviceRegistryEvents` | Microsoft Defender for Endpoint (MDE) | **`Timestamp`** | Registry changes; persistence, defense evasion, DLL hijacking detection |
+| [IdentityInfo.md](./IdentityInfo.md) | `IdentityInfo` | Microsoft Sentinel UEBA / Microsoft Defender for Identity | `TimeGenerated` | Latest identity state: account flags, blast radius, sensitivity tags, UAC properties |
 
 ---
 
