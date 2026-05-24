@@ -20,16 +20,28 @@ A query with hallucinated field names silently returns zero results in Sentinel.
 
 ---
 
-## Step 3a — Trusted Documentation Sources
+## Step 3a — Trusted Documentation Source
 
-Try WebFetch before asking the analyst. Use these URL patterns:
+Try WebFetch before asking the analyst. One URL pattern covers **all Sentinel and M365D tables**:
 
-| Table family | URL pattern |
+```
+https://raw.githubusercontent.com/MicrosoftDocs/azure-monitor-docs/main/articles/azure-monitor/reference/tables/<tablename-lowercase>.md
+```
+
+**Do NOT use `learn.microsoft.com`** — it consistently returns 403.
+
+Examples:
+| Table | URL |
 |---|---|
-| M365D Advanced Hunting (`Device*`, `Email*`, `Url*`, `Identity*`, `Alert*`) | `https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-<tablename>-table` |
-| Sentinel built-in tables (`SecurityEvent`, `SigninLogs`, etc.) | `https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/<tablename>` |
+| `SecurityEvent` | `.../tables/securityevent.md` |
+| `EmailEvents` | `.../tables/emailevents.md` |
+| `UrlClickEvents` | `.../tables/urlclickevents.md` |
+| `DeviceProcessEvents` | `.../tables/deviceprocessevents.md` |
+| `SigninLogs` | `.../tables/signinlogs.md` |
 
-**If fetch returns 403/404:** proceed with training knowledge if the table is widely documented. Mark schema as **Inferred** and Schema accuracy = 3. Save the inferred schema file so future sessions don't repeat the lookup.
+**If fetch returns 403/404 (unknown/custom table):** hard-block — ask the analyst to run `getschema`. Do not proceed with guessed fields.
+
+**If fetch returns 403/404 but table is well-known:** proceed with training knowledge. Mark schema as **Inferred**, Schema accuracy = 3, save the schema file to prevent repeat lookups.
 
 ---
 

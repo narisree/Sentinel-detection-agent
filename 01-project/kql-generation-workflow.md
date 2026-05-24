@@ -63,13 +63,22 @@ For every table referenced in the query:
 
 ### Step 3a — Attempt internet schema lookup (try before asking the analyst)
 
-Use `WebFetch` to retrieve the schema from the vendor's official documentation. Trusted sources by table family:
+Use `WebFetch` to retrieve the schema from the MicrosoftDocs GitHub repository. This source covers **all Sentinel and M365D tables** and is reliably accessible.
 
-| Table family | Documentation URL pattern |
-|---|---|
-| M365D Advanced Hunting tables (`Device*`, `Email*`, `Url*`, `Identity*`, `Alert*`) | `https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-<tablename>-table` (all lowercase, hyphens) |
-| Microsoft Sentinel built-in tables (`SecurityEvent`, `SigninLogs`, `AuditLogs`, etc.) | `https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/<tablename>` |
-| Syslog / CommonSecurityLog | Use the schema files already in `02-knowledge/sentinel-schema/` |
+**Primary source for all tables:**
+
+```
+https://raw.githubusercontent.com/MicrosoftDocs/azure-monitor-docs/main/articles/azure-monitor/reference/tables/<tablename-lowercase>.md
+```
+
+Examples:
+- `SecurityEvent` → `.../tables/securityevent.md`
+- `SigninLogs` → `.../tables/signinlogs.md`
+- `EmailEvents` → `.../tables/emailevents.md`
+- `UrlClickEvents` → `.../tables/urlclickevents.md`
+- `DeviceProcessEvents` → `.../tables/deviceprocessevents.md`
+
+**Note:** Microsoft Learn (`learn.microsoft.com`) consistently returns 403. Do not attempt to fetch from that domain.
 
 **If the fetch succeeds:**
 1. Extract all column names, types, and descriptions from the page.
