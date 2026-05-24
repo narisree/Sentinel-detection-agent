@@ -9,10 +9,27 @@ Consult this file whenever a required table schema is not in `02-knowledge/senti
 ```
 Schema file exists in 02-knowledge/sentinel-schema/<TableName>.md?
 ├── YES → proceed to Step 4, verify every field used against that file
-└── NO  → STOP. Execute the ask procedure below. Do not draft any KQL.
+└── NO  → Step 3a: attempt WebFetch from trusted vendor documentation
+          ├── Fetch SUCCEEDS → save schema → proceed to Step 4
+          ├── Fetch FAILS, table is well-known (M365D, Sentinel built-in)
+          │   → save inferred schema (mark as Inferred) → proceed, Schema score = 3
+          └── Fetch FAILS, table is unknown/custom → STOP, execute ask below
 ```
 
 A query with hallucinated field names silently returns zero results in Sentinel. That is worse than no query.
+
+---
+
+## Step 3a — Trusted Documentation Sources
+
+Try WebFetch before asking the analyst. Use these URL patterns:
+
+| Table family | URL pattern |
+|---|---|
+| M365D Advanced Hunting (`Device*`, `Email*`, `Url*`, `Identity*`, `Alert*`) | `https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-<tablename>-table` |
+| Sentinel built-in tables (`SecurityEvent`, `SigninLogs`, etc.) | `https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/<tablename>` |
+
+**If fetch returns 403/404:** proceed with training knowledge if the table is widely documented. Mark schema as **Inferred** and Schema accuracy = 3. Save the inferred schema file so future sessions don't repeat the lookup.
 
 ---
 

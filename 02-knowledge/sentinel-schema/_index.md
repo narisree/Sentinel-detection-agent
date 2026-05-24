@@ -22,6 +22,7 @@ Last updated: 2026-05-23
 | [DeviceLogonEvents.md](./DeviceLogonEvents.md) | `DeviceLogonEvents` | Microsoft Defender for Endpoint (MDE) | **`Timestamp`** | Device logon events; lateral movement, pass-the-hash, RDP detection |
 | [DeviceRegistryEvents.md](./DeviceRegistryEvents.md) | `DeviceRegistryEvents` | Microsoft Defender for Endpoint (MDE) | **`Timestamp`** | Registry changes; persistence, defense evasion, DLL hijacking detection |
 | [IdentityInfo.md](./IdentityInfo.md) | `IdentityInfo` | Microsoft Sentinel UEBA / Microsoft Defender for Identity | `TimeGenerated` | Latest identity state: account flags, blast radius, sensitivity tags, UAC properties |
+| [UrlClickEvents.md](./UrlClickEvents.md) | `UrlClickEvents` | Microsoft Defender for Office 365 Safe Links — via M365 Defender connector | **`Timestamp`** | URL click events from email, Teams, and Office docs; Safe Links allow/block decisions; phishing link detection |
 
 ---
 

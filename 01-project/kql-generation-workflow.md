@@ -43,11 +43,40 @@ For every table referenced in the query:
 2. Confirm every field name used exists in that schema file.
 3. Confirm the correct time field (`TimeGenerated` vs `Timestamp` for MDE tables).
 
-**If the schema file does not exist:** Stop. Follow the hard-block procedure in `02-knowledge/skills/sentinel-kql-queries/schema-gate.md` exactly. Do not guess field names, and do not present assumed field names alongside the ask.
+**If the schema file exists:** verify all fields used → proceed to Step 4.
+
+**If the schema file does not exist:** follow this resolution order before asking the analyst:
+
+### Step 3a — Attempt internet schema lookup (try before asking the analyst)
+
+Use `WebFetch` to retrieve the schema from the vendor's official documentation. Trusted sources by table family:
+
+| Table family | Documentation URL pattern |
+|---|---|
+| M365D Advanced Hunting tables (`Device*`, `Email*`, `Url*`, `Identity*`, `Alert*`) | `https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-<tablename>-table` (all lowercase, hyphens) |
+| Microsoft Sentinel built-in tables (`SecurityEvent`, `SigninLogs`, `AuditLogs`, etc.) | `https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/<tablename>` |
+| Syslog / CommonSecurityLog | Use the schema files already in `02-knowledge/sentinel-schema/` |
+
+**If the fetch succeeds:**
+1. Extract all column names, types, and descriptions from the page.
+2. Save immediately to `02-knowledge/sentinel-schema/<TableName>.md` using the standard schema file format.
+3. Update `02-knowledge/sentinel-schema/_index.md`.
+4. Note in one line: "Schema fetched from [URL] and saved."
+5. Continue to Step 4.
+
+**If the fetch fails (403, 404, timeout) but the table is well-known:**
+- Proceed using training knowledge, marking every field as **Inferred** (not Verified).
+- Schema accuracy score = 3 (well-known table, documentation-backed, not live-verified).
+- Add a note to the schema file: "Inferred from training knowledge — verify with `<TableName> | getschema` if fields behave unexpectedly."
+- Save the inferred schema to `02-knowledge/sentinel-schema/<TableName>.md` immediately.
+
+**If the fetch fails AND the table is unknown / custom:**
+- Hard block. Ask the analyst:
 
 ```
-The schema for `<TableName>` is not in the knowledge base yet. Before I generate,
-please run these two queries in your Sentinel workspace and paste the output:
+The schema for `<TableName>` is not in the knowledge base yet, and I was unable to
+find it in vendor documentation. Please run these two queries in your Sentinel
+workspace and paste the output:
 
 // 1. Column names and types
 <TableName> | getschema
@@ -57,6 +86,8 @@ please run these two queries in your Sentinel workspace and paste the output:
 ```
 
 Once the analyst pastes the output, save it to `02-knowledge/sentinel-schema/<TableName>.md` immediately, then continue to Step 4.
+
+> **Skill:** See `02-knowledge/skills/sentinel-kql-queries/schema-gate.md` for the full procedure, prohibited actions, and common field traps.
 
 ---
 

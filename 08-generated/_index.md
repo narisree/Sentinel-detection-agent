@@ -9,6 +9,7 @@ One folder per generated detection rule. Each folder contains `query.kql` and op
 | Folder | Date | Rule Name | Severity | MITRE Technique | Confidence |
 |--------|------|-----------|----------|----------------|------------|
 | [2026-05-23-password-never-expires-blast-radius-sensitive/](./2026-05-23-password-never-expires-blast-radius-sensitive/) | 2026-05-23 | Identities — Password Never Expires on Accounts with Blast Radius or Sensitive Tag | Medium | T1098 — Account Manipulation | Medium |
+| [2026-05-24-o365-unblocked-url-click/](./2026-05-24-o365-unblocked-url-click/) | 2026-05-24 | Office 365 — User clicked unblocked URL from email | Medium | T1566.002 — Phishing: Spearphishing Link | Medium |
 
 ---
 

@@ -1,0 +1,64 @@
+// ============================================================
+// Detection: Office 365 — User clicked unblocked URL from email
+// Description: This rule detects when a user clicks a URL embedded in an email
+//              that was not blocked by Microsoft Defender for Office 365 Safe Links.
+//              Unblocked clicks indicate the URL was either not flagged as malicious
+//              at time of delivery or a policy permitted the click to proceed.
+//              If confirmed malicious, an attacker may have delivered a payload or
+//              harvested credentials via a clicked link.
+// Severity: Medium
+// Tactic: Initial Access (TA0001)
+// Technique: T1566.002 — Phishing: Spearphishing Link
+// DataConnector: Microsoft 365 Defender
+// Table: UrlClickEvents
+// Author: SOC Detection Engineering
+// Version: 1.0
+// LastModified: 2026-05-24
+// ============================================================
+
+// Exclusion list — add environment-specific service/test accounts before deploying
+let ExcludedAccounts = dynamic([]);
+
+UrlClickEvents
+| where Timestamp > ago(1h)
+| where Workload == "Email"
+| where ActionType == "ClickAllowed"
+| where IsAdminSimulation == false
+| where AccountUpn !in (ExcludedAccounts)
+// Normalise ThreatTypes for safe comparison (dynamic → string)
+| extend ThreatInfo    = tostring(ThreatTypes)
+| extend IsKnownThreat = isnotempty(ThreatInfo) and ThreatInfo !in ("[]", "null", "")
+// Summarise per user — surface highest-risk users first
+| summarize
+    ClickCount       = count(),
+    UniqueUrls       = dcount(Url),
+    ThreatClickCount = countif(IsKnownThreat),
+    ClickedUrls      = make_set(Url, 20),
+    ThreatUrls       = make_set_if(Url, IsKnownThreat, 20),
+    NetworkMsgIds    = make_set(NetworkMessageId, 10),
+    SourceIPs        = make_set(IPAddress, 5),
+    FirstClick       = min(Timestamp),
+    LastClick        = max(Timestamp)
+  by AccountUpn
+| sort by ThreatClickCount desc, ClickCount desc
+// Entity columns for Sentinel entity mapping
+| extend AccountName   = tostring(split(AccountUpn, "@")[0])
+| extend AccountDomain = tostring(split(AccountUpn, "@")[1])
+| extend IPAddress     = tostring(SourceIPs[0])
+
+// ── Optional pivot to individual events ────────────────────────────────────────
+// To drill into individual clicks, remove the summarise block and use:
+//
+// | project Timestamp, AccountUpn, Url, ActionType, ThreatInfo,
+//           NetworkMessageId, IPAddress
+// | sort by Timestamp desc
+//
+// ── Optional join to EmailEvents for sender/subject context ───────────────────
+// Add before the summarise:
+//
+// | join kind=leftouter (
+//     EmailEvents
+//     | where Timestamp > ago(1h)
+//     | project NetworkMessageId, SenderFromAddress, Subject
+//   ) on NetworkMessageId
+// ──────────────────────────────────────────────────────────────────────────────
