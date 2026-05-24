@@ -151,11 +151,11 @@ Append-only log of lessons captured from analyst corrections, session observatio
 
 ---
 
-### LL-014 — Delivery format: show query + MITRE + critical notes only; no step narration
+### LL-014 — Delivery format: produce a complete Sentinel Analytics Rule card
 
 - **Date:** 2026-05-24
 - **Provenance:** Analyst preference (explicit instruction)
 - **Applies to:** All detections — Step 7 output format
-- **Lesson:** When delivering a KQL query, show only: (1) the full KQL query, (2) MITRE tactic/technique on one line, (3) up to 3 critical notes the analyst must act on. Do NOT show step narration, confidence tables, test case tables, or linter commentary in the response. All internal steps still run — just not surfaced unless a finding is deployment-blocking.
+- **Lesson:** Every detection response must be a complete Sentinel Analytics Rule card with all fields the analyst needs to create the rule in the portal: Name, Description, Tactics & Techniques, Severity, Rule Query, Query Scheduling, Alert Threshold, Event Grouping, Create Incidents, Alert Grouping. Do NOT show step narration, confidence tables, test case tables, or linter commentary. All internal steps still run silently. Scheduling and grouping values are derived from severity using `metadata-standards.md §7-9`.
 
 <!-- Entries added below as lessons are captured. Newest at bottom. -->

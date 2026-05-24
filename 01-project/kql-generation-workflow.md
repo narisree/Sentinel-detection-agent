@@ -227,21 +227,64 @@ Record findings and any changes made.
 
 ## Step 7 — Deliver
 
-**Output format (analyst preference — do not deviate):**
+**Output format — produce a complete Sentinel Analytics Rule card. Do not deviate.**
 
-Show only:
-1. **The KQL query** — full query with header block, ready to paste into Sentinel.
-2. **MITRE tactic and technique** — one line.
-3. **Important notes** — only items the analyst must act on before deployment (critical FP risks, required tuning, production-breaking gaps). Keep to 3 bullet points max. Omit if nothing critical.
+All steps 1–6 still run internally (schema verified, linter, critic, confidence scored). None of that is shown in the response unless a finding would block deployment.
 
-Do NOT show in the response:
-- Step numbers or workflow narration ("Step 1 — Understand…", "Step 3 — Schema…")
-- Confidence breakdown table
-- Full test case tables
-- Linter/critic commentary
+---
 
-**All steps 1–6 still run internally** — schema is verified, linter runs, critic runs, confidence is scored. None of this is shown unless a finding is critical enough to block deployment.
+### Output Template
+
+```
+**Name:** <descriptive rule name>
+
+**Description:** <2-3 sentences: what is detected, why it is suspicious, potential impact>
+
+**Tactics & Techniques:** <Tactic (TAXXXX)> — <TXXXX.YYY Technique Name>
+
+**Severity:** <Informational | Low | Medium | High>
+
+**Rule Query:**
+<full KQL query>
+
+**Query Scheduling:**
+- Run every: <frequency>
+- Look back: <period>
+
+**Alert Threshold:** Number of results is greater than 0
+
+**Event Grouping:** <Group all events into a single alert | Trigger an alert for each event>
+
+**Create Incidents:** Enabled
+
+**Alert Grouping:** <grouping rule — e.g., "Group alerts for the same User within 24 hours into a single incident">
+```
+
+### How to populate each field
+
+**Query Scheduling** — derive from severity using `02-knowledge/house-style/metadata-standards.md §7`:
+| Severity | Run every | Look back |
+|----------|-----------|-----------|
+| High | 15 min | 1 hour |
+| Medium | 1 hour | 1 hour |
+| Low | 4 hours | 4 hours |
+| Informational | 24 hours | 24 hours |
+
+**Event Grouping:**
+- Use "Trigger an alert for each event" when every occurrence is independently significant (e.g., admin role assignment, new service principal).
+- Use "Group all events into a single alert" when events represent a sustained behaviour (e.g., brute force, beaconing).
+
+**Alert Grouping** — derive from severity using `metadata-standards.md §9`:
+| Severity | Grouping |
+|----------|---------|
+| High | One incident per entity (Account or Host), 24-hour window |
+| Medium | Group by Account + Source IP, 4-hour window |
+| Low | Group by Account, 24-hour window |
+| Informational | Group all, 24-hour window |
+
+**Important notes** — append only if there are critical items the analyst must act on before deployment (FP risks, required tuning, gaps). Max 3 bullet points. Omit entirely if nothing critical.
 
 ### Saved Artefact (always, silently)
 
-Save the output to `08-generated/<rule-name>/query.kql` and update `08-generated/_index.md`. Append a pattern snippet to `06-lessons/pattern-library.md` if the pattern is novel. Mention the save path in one line after the query.
+Save the full output to `08-generated/<rule-name>/query.kql` and update `08-generated/_index.md`. Mention the save path in one line after the card.
+
