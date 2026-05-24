@@ -17,11 +17,67 @@ When something clearly belongs somewhere, write it. Don't ask permission. Exampl
 
 After writing, mention it in one line.
 
-## Ask only when genuinely ambiguous
+## No assumptions — ask with options instead
 
-- Two valid KQL approaches exist with no way to choose between them.
-- The input is genuinely ambiguous (e.g. "detect lateral movement" with no table or technique specified).
-- A table schema is not in the knowledge base — always ask rather than guess field names.
+**Never assume when two or more valid interpretations exist.** An incorrect assumption silently produces the wrong query — that costs more than one clarifying question.
+
+### When to ask (mandatory)
+
+| Situation | Example ambiguity | Ask before drafting |
+|---|---|---|
+| Use case type unclear | "review recent X" could mean investigation query OR scheduled rule | Yes |
+| Table scope unclear | "detect lateral movement" — on-prem AD, Azure AD, or MDE? | Yes |
+| Single-table vs multi-table unclear | "emails with URL clicks" — UrlClickEvents alone or EmailEvents + UrlClickEvents? | Yes |
+| Entity scope unclear | "for a specific account" vs "across all users" | Yes |
+| Threshold vs no threshold | "detect brute force" — alert every time, or count-based? | Yes |
+| Filter logic unclear | Two valid ways to express "not blocked" | Yes |
+| Time window not specified for investigation queries | Timeframe unclear | Yes |
+
+### How to ask — always provide options
+
+Do not ask open-ended questions. Present 2–4 concrete options so the analyst can answer in one word or click:
+
+**Good:**
+> Is this an investigation query for a specific compromised account, or a scheduled detection rule that runs across all users?
+> A) Investigation query — parameterised for one account, event-level output
+> B) Scheduled detection — runs every hour, aggregated, threshold-based
+
+**Bad:**
+> "What kind of query do you want?"
+
+**Good:**
+> Which data source should this target?
+> A) Azure AD / Entra ID (SigninLogs)
+> B) On-prem Active Directory (SecurityEvent)
+> C) Both — correlate across tables
+
+**Bad:**
+> "Should I use SigninLogs or SecurityEvent?"
+
+### Hard rule: never fill a gap with an assumption
+
+If a required design decision is missing from the request:
+1. State what the gap is in one sentence.
+2. List the options (2–4).
+3. Wait for the answer.
+
+Do not generate a query and footnote the assumption. Do not pick "the most common case." Do not silently default to a scheduled rule when the request could be an investigation query.
+
+### What is NOT ambiguous (do not ask)
+
+- Which file to save output to — always save per the workflow.
+- Whether to write a session journal — always write at the end.
+- Whether to check the schema — always check.
+- What header format to use — always use house style.
+- Whether to run the cognitive linter — always run.
+
+## Ask only when genuinely ambiguous — summary
+
+Ask when:
+- Use case type is unclear (investigation vs scheduled rule).
+- Table or scope is unclear.
+- The request could produce two meaningfully different queries.
+- A schema is missing and the internet fetch failed (unknown/custom table).
 - A destructive action is imminent (overwriting an existing generated output file).
 
-For complex/hard detections, the agent IS authorized to ask 1-2 clarifying questions BEFORE generating.
+For Hard detections: ask 1–2 clarifying questions with options BEFORE generating. Never ask more than 2.

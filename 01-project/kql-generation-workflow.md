@@ -30,7 +30,19 @@ Parse the analyst's request and extract:
 - Sort by `Timestamp desc` as the final operator.
 - Ask before drafting: **"Is this for a specific account/entity or a broad detection across all users?"** — this one question determines the entire query structure.
 
-**For Hard detections:** Ask 1–2 clarifying questions before proceeding. Examples:
+**If signals are mixed or absent — ask with options before drafting:**
+
+```
+Is this:
+A) An investigation query — parameterised for a specific account/entity, event-level
+   output, sorted by time. Used for triage after a suspected compromise.
+B) A scheduled detection rule — runs on a timer, aggregated output, threshold-based,
+   fires alerts for any matching entity across all users.
+```
+
+Never assume. A wrong choice here produces the wrong query entirely.
+
+**For Hard detections:** Ask 1–2 clarifying questions with options before proceeding. Examples:
 - "Is this targeting Azure AD, on-prem AD, or both?"
 - "Should this correlate across multiple tables or stay single-table?"
 

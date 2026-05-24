@@ -24,15 +24,31 @@ Assign one rating before proceeding. The rating drives the confidence target, wh
 
 ---
 
-## Clarifying Questions (Hard only — ask at most 2)
+## No Assumptions — Ask with Options
 
-Choose the two most impactful from this list:
+**Never fill a design gap with an assumption.** When two or more valid interpretations exist, stop and ask before drafting. Present options — never ask open-ended questions.
 
-- "Is this targeting Azure AD, on-prem AD, or both?"
-- "Should this alert on every occurrence or only when a threshold is exceeded?"
-- "Should this correlate across multiple tables or stay single-table?"
-- "What is the typical volume of this event type in your environment (rough estimate)?"
-- "Are there known benign processes/accounts that must be excluded?"
+### Mandatory: use case type question (ask whenever unclear)
+
+```
+Is this:
+A) Investigation query — parameterised for a specific account/entity, event-level
+   output, sorted by Timestamp desc. Used for triage after a suspected compromise.
+B) Scheduled detection rule — runs on a timer, aggregated output, threshold-based,
+   fires alerts across all users.
+```
+
+### Additional clarifying questions (Hard only — ask at most 2 total)
+
+Always provide options, not open questions:
+
+| Gap | Options to offer |
+|---|---|
+| Environment unclear | A) Azure AD / Entra ID  B) On-prem AD  C) Both |
+| Table scope unclear | A) Single table  B) Multi-table join (specify which) |
+| Threshold unclear | A) Alert every occurrence  B) Count-based threshold |
+| Account scope unclear | A) Specific account (investigation)  B) All users (detection) |
+| Time window unclear | A) Last 1h (scheduled rule)  B) Custom window (provide Timeframe) |
 
 ---
 
