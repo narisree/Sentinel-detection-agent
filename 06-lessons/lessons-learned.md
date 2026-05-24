@@ -125,4 +125,28 @@ Append-only log of lessons captured from analyst corrections, session observatio
 - **Before:** `extend SPId = tostring(TargetResources[0].id)` — returns object GUID, not AppId
 - **After:** `extend AppId = tostring(AdditionalDetails[1].value)` — returns Application (client) ID
 
+---
+
+### LL-012 — PIM exclusion in AuditLogs uses `Identity <> "MS-PIM"`, not `LoggedByService`
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction (production query provided)
+- **Applies to:** `AuditLogs` — any role assignment detection that should exclude PIM-initiated events
+- **Lesson:** PIM-initiated role assignments and removals set the `Identity` field to "MS-PIM". Filter with `| where Identity <> "MS-PIM"` on both add and remove sub-queries. `LoggedByService != "PIM"` is not equivalent — PIM can log events under different service values.
+- **Before:** `| where LoggedByService != "PIM"`
+- **After:** `| where Identity <> "MS-PIM"`
+
+---
+
+### LL-013 — Role name in `modifiedProperties` is doubly-serialized; add uses `newValue`, remove uses `oldValue`
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction (production query provided)
+- **Applies to:** `AuditLogs` — "Add member to role" and "Remove member from role" operations
+- **Lesson:** `TargetResources[0].modifiedProperties` is stored as a serialized JSON string, requiring `parse_json(tostring(...))` to access the array. Within that array, the role name is at index [1]. The `newValue` and `oldValue` sub-fields are also JSON-encoded strings requiring a second `parse_json(tostring(...))`. Critically: for **add** use `newValue`; for **remove** use `oldValue`. Using `newValue` for removals silently returns empty.
+- **Before:** `mv-apply` on modifiedProperties filtering by `displayName == "Role.DisplayName"`, using `newValue` for both add and remove
+- **After:**
+  - Add: `tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].newValue)))`
+  - Remove: `tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].oldValue)))`
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->

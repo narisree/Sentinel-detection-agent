@@ -143,19 +143,33 @@ AuditLogs
 
 Each modified property has `displayName`, `oldValue`, and `newValue`. Values are JSON-encoded strings (e.g., `"[\"True\"]"`).
 
+> **IMPORTANT — doubly-serialized (production-verified):**
+> `TargetResources[0].modifiedProperties` is stored as a serialized JSON string within the dynamic column.
+> Access requires two layers of `parse_json(tostring(...))`.
+> The role name entry is at **index [1]**.
+> For **add** operations use `newValue`; for **remove** operations use `oldValue`.
+
+### Role name extraction (production-verified pattern)
+
 ```kql
-// Find all role assignment changes
+// For "Add member to role" — role name is in newValue
 AuditLogs
-| where ActivityDisplayName == "Add member to role"
-| mv-expand TargetResources
-| mv-apply ModProp = TargetResources.modifiedProperties on (
-    where tostring(ModProp.displayName) == "Role.DisplayName"
-  )
-| extend RoleName     = replace_string(tostring(ModProp.newValue), '"', '')
-| extend TargetUPN    = tostring(TargetResources.userPrincipalName)
-| extend ActorUPN     = tostring(InitiatedBy.user.userPrincipalName)
-| project TimeGenerated, ActorUPN, TargetUPN, RoleName
+| where OperationName == "Add member to role"
+| where Identity <> "MS-PIM"   // exclude PIM-initiated events
+| extend User = tostring(TargetResources[0].userPrincipalName)
+| extend Role = tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].newValue)))
+
+// For "Remove member from role" — role name is in oldValue (NOT newValue)
+AuditLogs
+| where OperationName == "Remove member from role"
+| where Identity <> "MS-PIM"
+| extend User = tostring(TargetResources[0].userPrincipalName)
+| extend Role = tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].oldValue)))
 ```
+
+### PIM exclusion
+
+Azure AD PIM-initiated role operations set `Identity == "MS-PIM"`. Always filter `| where Identity <> "MS-PIM"` in role assignment detections to suppress PIM noise.
 
 ---
 

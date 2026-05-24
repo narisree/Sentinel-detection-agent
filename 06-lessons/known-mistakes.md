@@ -157,4 +157,42 @@ EmailInformation
 
 ---
 
+### KM-009 — Role name extraction from `modifiedProperties`: add uses `newValue`, remove uses `oldValue`
+
+- **Applies to:** `AuditLogs` — "Add member to role" and "Remove member from role" operations
+- **Mistake:** Using `newValue` for both add and remove events when extracting the role name. For removal events, `newValue` is empty — the role name is in `oldValue`.
+- **Correct:** Use `newValue` for "Add member to role" and `oldValue` for "Remove member from role". Both require doubly-serialized parsing: `parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].VALUE))`.
+- **Check:** Every role detection that has both add and remove branches must use different value fields for each.
+
+```kql
+// WRONG — newValue is empty for removal events
+| extend Role = tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].newValue)))
+// used for BOTH add and remove
+
+// CORRECT
+// For "Add member to role":
+| extend Role = tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].newValue)))
+// For "Remove member from role":
+| extend Role = tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].oldValue)))
+```
+
+---
+
+### KM-010 — PIM exclusion uses `Identity <> "MS-PIM"`, not `LoggedByService != "PIM"`
+
+- **Applies to:** `AuditLogs` — any role assignment detection excluding PIM-initiated events
+- **Mistake:** Using `LoggedByService != "PIM"` to exclude PIM events.
+- **Correct:** Use `Identity <> "MS-PIM"`. The `Identity` field is set to "MS-PIM" for PIM-initiated role operations regardless of `LoggedByService` value.
+- **Check:** All role add/remove detection queries must filter `Identity <> "MS-PIM"` to exclude PIM noise.
+
+```kql
+// WRONG
+| where LoggedByService != "PIM"
+
+// CORRECT
+| where Identity <> "MS-PIM"
+```
+
+---
+
 <!-- Additional known mistakes appended below as they are discovered. -->
