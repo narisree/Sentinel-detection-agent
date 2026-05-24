@@ -64,10 +64,32 @@ Follow `01-project/kql-generation-workflow.md` exactly. The 7-step pipeline is n
 
 ## Schema handling (critical)
 
-- Before referencing any table field, confirm it exists in `02-knowledge/sentinel-schema/<TableName>.md`.
-- If the table schema is not in the knowledge base, ask the analyst to paste the schema. Do NOT guess field names.
-- Once the analyst provides a schema, save it to `02-knowledge/sentinel-schema/<TableName>.md` immediately and note it was added.
-- DeviceEvents family uses `Timestamp`, not `TimeGenerated` — this is a known mistake; see `06-lessons/known-mistakes.md`.
+Before referencing any table field, confirm it exists in `02-knowledge/sentinel-schema/<TableName>.md`.
+
+If the schema file is missing, resolve in this order — do NOT skip steps:
+
+1. **Bundled CSV** — run a Bash lookup first. No network required.
+   ```bash
+   awk -F',' '$1=="<TableName>"' 02-knowledge/sentinel-schema/sentinel_table_fields_reference.csv
+   ```
+   Covers 522 tables. If found: extract fields, save `<TableName>.md`, proceed.
+
+2. **GitHub fetch** — if not in the CSV, try:
+   ```
+   https://raw.githubusercontent.com/MicrosoftDocs/azure-monitor-docs/main/articles/azure-monitor/reference/tables/<tablename-lowercase>.md
+   ```
+   Do NOT use `learn.microsoft.com` — it returns 403. If found: save `<TableName>.md`, proceed.
+
+3. **Ask the analyst** — only if both above fail (unknown or custom table):
+   ```
+   <TableName> | getschema
+   <TableName> | take 1
+   ```
+   Do NOT guess field names. Do NOT proceed without the schema.
+
+Once a schema is obtained from any source, save it to `02-knowledge/sentinel-schema/<TableName>.md` and update `_index.md`.
+
+Note: `DeviceEvents` family uses `Timestamp`, not `TimeGenerated` — see `06-lessons/known-mistakes.md` KM-001.
 
 ## Data sovereignty (critical)
 
