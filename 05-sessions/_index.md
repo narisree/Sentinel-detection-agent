@@ -8,7 +8,8 @@ Session journals are written automatically at the end of every substantive sessi
 
 | File | Date | Topic | Detections Generated | Lessons Captured |
 |------|------|-------|---------------------|-----------------|
-| — | — | No sessions recorded yet | — | — |
+| [2026-05-23-password-never-expires-blast-radius-sensitive.md](./2026-05-23-password-never-expires-blast-radius-sensitive.md) | 2026-05-23 | Password never expires blast radius detection | 1 | — |
+| [2026-05-24-skills-build-url-click-aad-firsttime.md](./2026-05-24-skills-build-url-click-aad-firsttime.md) | 2026-05-24 | Skills infrastructure + UrlClickEvents + AAD first-time SP | 2 | LL-005 through LL-009, KM-005, KM-006 |
 
 ---
 
