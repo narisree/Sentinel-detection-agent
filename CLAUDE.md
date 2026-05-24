@@ -40,6 +40,11 @@ Advisory gates only — never blocks delivery.
 - `02-knowledge/detections/` — existing detection examples (HOUSE STYLE OVERRIDES DOCS).
 - `02-knowledge/normalization-mappings/` — severity scales, type coercions.
 - `02-knowledge/house-style/` — patterns extracted from existing detections.
+- `02-knowledge/skills/` — on-demand skill guides loaded at specific workflow steps (not at session start):
+  - `sentinel-kql-queries/` — complexity classification, schema gate procedure, confidence scoring rubric.
+  - `sentinel-kql-patterns/` — routing table + pattern sub-files (threshold, baseline, join, exclusion, enrichment, LOLBin/regex).
+  - `sentinel-detection-tuning/` — FP reduction, threshold guidance, suppression and grouping settings.
+  - `sentinel-behavioral-detections/` — join type selection, time-window correlation, anomaly detection.
 - `04-decisions/` — ADRs.
 - `05-sessions/` — session journals, auto-written.
 - `06-lessons/` — append-only learning; consulted before EVERY generation.

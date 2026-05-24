@@ -14,6 +14,8 @@ Parse the analyst's request and extract:
 - **Tables in scope** — which Sentinel tables are relevant (cross-reference `02-knowledge/sentinel-schema/_index.md`)?
 - **Complexity rating** — Easy / Medium / Hard (drives confidence target and whether to ask clarifying questions).
 
+> **Skill:** Read `02-knowledge/skills/sentinel-kql-queries/index.md` to classify complexity and confirm table selection.
+
 **For Hard detections:** Ask 1–2 clarifying questions before proceeding. Examples:
 - "Is this targeting Azure AD, on-prem AD, or both?"
 - "Should this correlate across multiple tables or stay single-table?"
@@ -41,7 +43,7 @@ For every table referenced in the query:
 2. Confirm every field name used exists in that schema file.
 3. Confirm the correct time field (`TimeGenerated` vs `Timestamp` for MDE tables).
 
-**If the schema file does not exist:** Stop. Ask the analyst to provide the schema using the exact format below. Do not guess field names, and do not present assumed field names alongside the ask.
+**If the schema file does not exist:** Stop. Follow the hard-block procedure in `02-knowledge/skills/sentinel-kql-queries/schema-gate.md` exactly. Do not guess field names, and do not present assumed field names alongside the ask.
 
 ```
 The schema for `<TableName>` is not in the knowledge base yet. Before I generate,
@@ -68,6 +70,10 @@ Write the KQL following house style:
 4. Logical filter order: EventID → Account filters → Exclusions → Aggregations.
 5. Entity extraction columns at the end (`AccountName`, `HostName`, `IPAddress`).
 6. `sort by` on the most useful column.
+
+> **Skill (pattern selection):** Read `02-knowledge/skills/sentinel-kql-patterns/index.md` → use the routing table to identify the right pattern → read the relevant pattern sub-file.
+
+> **Skill (Hard / multi-table only):** If the detection requires joining two or more tables, read `02-knowledge/skills/sentinel-behavioral-detections/index.md` before drafting.
 
 ---
 
@@ -101,6 +107,8 @@ For Medium and Hard detections, produce a blind critic review: re-read the query
 4. Is the threshold reasonable for a production environment?
 5. Is the join type correct given the data cardinality?
 
+> **Skill:** Use `02-knowledge/skills/sentinel-detection-tuning/index.md` as the critic checklist. Consult sub-files (`fp-reduction.md`, `threshold-guidance.md`) for specific guidance.
+
 Record findings and any changes made.
 
 ---
@@ -124,7 +132,7 @@ Full KQL query with header block, ready to paste into Sentinel.
 
 ### C. Confidence Breakdown
 
-Per `01-project/confidence-framework.md`.
+> **Skill:** Score using `02-knowledge/skills/sentinel-kql-queries/confidence-scoring.md` for the rubric and output template.
 
 ### D. Fix-List
 
