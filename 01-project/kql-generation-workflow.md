@@ -201,29 +201,21 @@ Record findings and any changes made.
 
 ## Step 7 — Deliver
 
-Package the output as:
+**Output format (analyst preference — do not deviate):**
 
-### A. The Query
+Show only:
+1. **The KQL query** — full query with header block, ready to paste into Sentinel.
+2. **MITRE tactic and technique** — one line.
+3. **Important notes** — only items the analyst must act on before deployment (critical FP risks, required tuning, production-breaking gaps). Keep to 3 bullet points max. Omit if nothing critical.
 
-Full KQL query with header block, ready to paste into Sentinel.
+Do NOT show in the response:
+- Step numbers or workflow narration ("Step 1 — Understand…", "Step 3 — Schema…")
+- Confidence breakdown table
+- Full test case tables
+- Linter/critic commentary
 
-### B. Test Cases
+**All steps 1–6 still run internally** — schema is verified, linter runs, critic runs, confidence is scored. None of this is shown unless a finding is critical enough to block deployment.
 
-| Test | Expected Result |
-|------|----------------|
-| Known-good event (should match) | Alert fires |
-| Exclusion list member | No alert |
-| Below-threshold count | No alert |
-| Schema field null/empty | No crash |
+### Saved Artefact (always, silently)
 
-### C. Confidence Breakdown
-
-> **Skill:** Score using `02-knowledge/skills/sentinel-kql-queries/confidence-scoring.md` for the rubric and output template.
-
-### D. Fix-List
-
-Numbered list of items to validate in the analyst's environment before deploying to production.
-
-### E. Saved Artefact
-
-Save the output to `08-generated/<rule-name>/query.kql` and update `08-generated/_index.md`. Append a pattern snippet to `06-lessons/pattern-library.md` if the pattern is novel.
+Save the output to `08-generated/<rule-name>/query.kql` and update `08-generated/_index.md`. Append a pattern snippet to `06-lessons/pattern-library.md` if the pattern is novel. Mention the save path in one line after the query.

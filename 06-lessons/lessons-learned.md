@@ -149,4 +149,13 @@ Append-only log of lessons captured from analyst corrections, session observatio
   - Add: `tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].newValue)))`
   - Remove: `tostring(parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].oldValue)))`
 
+---
+
+### LL-014 — Delivery format: show query + MITRE + critical notes only; no step narration
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst preference (explicit instruction)
+- **Applies to:** All detections — Step 7 output format
+- **Lesson:** When delivering a KQL query, show only: (1) the full KQL query, (2) MITRE tactic/technique on one line, (3) up to 3 critical notes the analyst must act on. Do NOT show step narration, confidence tables, test case tables, or linter commentary in the response. All internal steps still run — just not surfaced unless a finding is deployment-blocking.
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->
