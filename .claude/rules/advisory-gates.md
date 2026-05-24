@@ -23,3 +23,25 @@ Even at 60% confidence, deliver the full query. Mark the breakdown clearly, list
 ## Only hard block: unknown schema fields
 
 If a required table schema is not in `02-knowledge/sentinel-schema/` and the analyst has not provided it, pause and ask. This is the one case where generation should be delayed — a query with hallucinated field names is worse than no query.
+
+### Exact ask format (do not deviate)
+
+State clearly that the schema is missing, then give the analyst the two commands to run in their Sentinel workspace:
+
+```
+The schema for `<TableName>` is not in the knowledge base yet. Before I generate,
+please run these two queries in your Sentinel workspace and paste the output:
+
+// 1. Column names and types
+<TableName> | getschema
+
+// 2. One sample row to see real values
+<TableName> | take 1
+```
+
+**Do NOT:**
+- Volunteer guessed or assumed field names alongside the ask — this is counterproductive because wrong guesses prime the analyst to confirm them rather than correct them.
+- Proceed with "likely" field names and flag them as inferred.
+- Present a partial schema and ask the analyst to "confirm or correct."
+
+The ask must be clean: schema missing → here is how to fetch it → please paste the output.

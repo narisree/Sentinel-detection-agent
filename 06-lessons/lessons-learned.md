@@ -50,4 +50,13 @@ Append-only log of lessons captured from analyst corrections, session observatio
 
 ---
 
+### LL-005 — Schema hard-block ask must be clean — do not volunteer guessed fields
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction
+- **Applies to:** All detections where the target table has no schema file in `02-knowledge/sentinel-schema/`
+- **Lesson:** When the schema is missing, ask the analyst to fetch it using `<TableName> | getschema` and `<TableName> | take 1`. Do NOT present assumed or guessed field names alongside the ask. Doing so primes the analyst to confirm guesses rather than correct them, defeating the purpose of the schema gate.
+- **Before:** Asked for the schema AND listed assumed field names "for the analyst to confirm or correct."
+- **After:** Ask only — state the schema is missing, give the two fetch commands, wait for output. Zero guessed fields in the ask.
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->

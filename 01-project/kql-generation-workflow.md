@@ -41,7 +41,20 @@ For every table referenced in the query:
 2. Confirm every field name used exists in that schema file.
 3. Confirm the correct time field (`TimeGenerated` vs `Timestamp` for MDE tables).
 
-**If the schema file does not exist:** Stop. Ask the analyst to provide the schema. Do not guess field names.
+**If the schema file does not exist:** Stop. Ask the analyst to provide the schema using the exact format below. Do not guess field names, and do not present assumed field names alongside the ask.
+
+```
+The schema for `<TableName>` is not in the knowledge base yet. Before I generate,
+please run these two queries in your Sentinel workspace and paste the output:
+
+// 1. Column names and types
+<TableName> | getschema
+
+// 2. One sample row to see real values
+<TableName> | take 1
+```
+
+Once the analyst pastes the output, save it to `02-knowledge/sentinel-schema/<TableName>.md` immediately, then continue to Step 4.
 
 ---
 
