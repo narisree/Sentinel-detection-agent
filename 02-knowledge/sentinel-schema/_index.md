@@ -23,6 +23,15 @@ Tables NOT in CSV (use GitHub fallback): DeviceProcessEvents, DeviceNetworkEvent
 
 ---
 
+## Operation-Specific Extraction Patterns
+
+**File:** `AuditLogs-operations.md`
+**Purpose:** Per-`OperationName` verified extraction paths for AuditLogs dynamic sub-fields (`TargetResources` internals, `AdditionalDetails`, `modifiedProperties`). Consulted at Step 3c of the workflow before accessing any dynamic sub-field.
+**Seeded operations:** `Add member to role`, `Remove member from role`, `Add service principal`
+**Grows organically** — new entries added each time a new operation is encountered and verified.
+
+---
+
 ## Schema Files
 
 | File | Table | Source | Primary Time Field | Description |

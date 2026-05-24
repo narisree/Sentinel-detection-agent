@@ -142,7 +142,33 @@ workspace and paste the output:
 
 Once the analyst pastes the output, save it to `02-knowledge/sentinel-schema/<TableName>.md` immediately, then continue to Step 4.
 
-> **Skill:** See `02-knowledge/skills/sentinel-kql-queries/schema-gate.md` for the full procedure, prohibited actions, and common field traps.
+### Step 3c — Operation Gate (AuditLogs and DeviceEvents dynamic sub-fields)
+
+This gate runs **after** the schema file is confirmed to exist. It is a separate check for sub-field access patterns inside dynamic columns.
+
+**Applies when the query accesses any of these:**
+- `AuditLogs`: `TargetResources[*]` internals, `AdditionalDetails[*]`, `modifiedProperties`
+- `DeviceEvents`: `AdditionalFields.<sub-field>` for a specific `ActionType`
+
+**Check:** Open `02-knowledge/sentinel-schema/AuditLogs-operations.md`. Look up the `OperationName` being queried.
+
+```
+Entry found → copy the verified extraction path exactly → proceed to Step 4
+Entry NOT found → hard block → ask the analyst:
+```
+
+```
+I don't have a verified extraction pattern for OperationName = "<OperationName>".
+Before I generate, please run this in your Sentinel workspace and paste the output:
+
+AuditLogs
+| where OperationName == "<OperationName>"
+| take 1
+```
+
+Once the analyst pastes the output: parse the JSON, add a new entry to `AuditLogs-operations.md`, then continue to Step 4.
+
+> **Skill:** See `02-knowledge/skills/sentinel-kql-queries/schema-gate.md §Operation Gate` for the full procedure and prohibited actions.
 
 ---
 

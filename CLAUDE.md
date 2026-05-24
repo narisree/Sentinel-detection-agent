@@ -87,6 +87,25 @@ If the schema file is missing, resolve in this order — do NOT skip steps:
    ```
    Do NOT guess field names. Do NOT proceed without the schema.
 
+## Operation gate (critical — AuditLogs and DeviceEvents dynamic sub-fields)
+
+The schema gate confirms a column exists. It cannot confirm how to access sub-fields inside dynamic columns — these vary per `OperationName` / `ActionType`.
+
+**Before accessing any of these, check `02-knowledge/sentinel-schema/AuditLogs-operations.md`:**
+- `AuditLogs`: `TargetResources[*]` internals, `AdditionalDetails[*]`, `modifiedProperties`
+- `DeviceEvents`: `AdditionalFields.<sub-field>`
+
+```
+Entry found → copy verified extraction path exactly → proceed
+Entry NOT found → hard block → ask:
+
+  AuditLogs
+  | where OperationName == "<OperationName>"
+  | take 1
+```
+
+Save new entries to `AuditLogs-operations.md` immediately. The file grows organically — do not guess sub-field paths.
+
 Once a schema is obtained from any source, save it to `02-knowledge/sentinel-schema/<TableName>.md` and update `_index.md`.
 
 Note: `DeviceEvents` family uses `Timestamp`, not `TimeGenerated` — see `06-lessons/known-mistakes.md` KM-001.

@@ -1,10 +1,84 @@
 # Schema Gate — Hard-Block Procedure
 
-Consult this file whenever a required table schema is not in `02-knowledge/sentinel-schema/`.
+Consult this file whenever a required table schema is not in `02-knowledge/sentinel-schema/`, OR whenever a query accesses dynamic sub-fields of AuditLogs or DeviceEvents.
 
 ---
 
-## Decision Rule
+## Two Separate Gates
+
+| Gate | Triggers when | Blocks on |
+|------|--------------|-----------|
+| **Schema Gate** | Table schema file missing | Unknown column names |
+| **Operation Gate** | Accessing dynamic sub-fields of AuditLogs / DeviceEvents.AdditionalFields | Unknown sub-field structure for a specific OperationName / ActionType |
+
+Both are hard blocks. A query with the right column names but wrong sub-field access paths silently returns zero results — equally bad as a hallucinated column name.
+
+---
+
+## Operation Gate
+
+### When it triggers
+
+Apply the operation gate whenever the query accesses **any** of these for `AuditLogs`:
+- `TargetResources[*]` internals beyond `.id`, `.displayName`, `.type`, `.userPrincipalName`
+- `AdditionalDetails[*]` (any index access)
+- `modifiedProperties` (any access)
+
+Apply for `DeviceEvents`:
+- `AdditionalFields.<any sub-field>` for a specific `ActionType`
+
+**Does NOT trigger for:** top-level flat columns (`OperationName`, `Result`, `TimeGenerated`, `Identity`, `CorrelationId`).
+
+### Decision rule
+
+```
+Query accesses dynamic sub-fields for OperationName / ActionType X?
+├── YES → Check 02-knowledge/sentinel-schema/AuditLogs-operations.md
+│         ├── Entry for X exists → copy verified extraction path exactly → proceed
+│         └── Entry for X NOT found → STOP → Operation Gate Ask (below)
+└── NO  → proceed (flat fields only)
+```
+
+### The Exact Ask (copy verbatim)
+
+```
+I don't have a verified extraction pattern for OperationName = "<OperationName>".
+Before I generate, please run this in your Sentinel workspace and paste the output:
+
+AuditLogs
+| where OperationName == "<OperationName>"
+| take 1
+```
+
+For DeviceEvents:
+```
+I don't have a verified extraction pattern for ActionType = "<ActionType>".
+Before I generate, please run this in your Sentinel workspace and paste the output:
+
+DeviceEvents
+| where ActionType == "<ActionType>"
+| take 1
+```
+
+### After the analyst pastes the output
+
+1. Parse the JSON to identify the exact path to each field needed.
+2. Add a new entry to `02-knowledge/sentinel-schema/AuditLogs-operations.md` using the format in that file.
+3. State in one line: "Extraction pattern saved to `AuditLogs-operations.md`."
+4. Continue to Step 4 using only the verified paths.
+
+### What NOT to do
+
+| Prohibited | Why |
+|---|---|
+| Guess the index (`[0]`, `[1]`) from the operation name | Index varies per operation — silent empty result |
+| Use `newValue` for both add and remove operations | Remove uses `oldValue` — silent empty result (KM-009) |
+| Use direct dot notation on `InitiatedBy.user` | Doubly-serialized — silently returns null (KM-007) |
+| Proceed with "probably right" paths | Same failure mode as guessed column names |
+
+---
+
+## Schema Gate (original — table-level)
 
 ```
 Schema file exists in 02-knowledge/sentinel-schema/<TableName>.md?
