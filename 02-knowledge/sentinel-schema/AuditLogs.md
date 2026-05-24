@@ -242,11 +242,6 @@ AuditLogs
 | `Microsoft Managed Desktop` | MMD device management |
 | `Authentication Methods` | MFA / SSPR operations |
 
----
-
-## Sample KQL Queries
-
-### Privilege Escalation — User Added to Global Admin Role
 
 ```kql
 AuditLogs

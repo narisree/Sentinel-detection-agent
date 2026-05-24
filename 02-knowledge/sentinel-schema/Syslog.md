@@ -196,11 +196,6 @@ Syslog
     " rhost=" RHost " user=" FailedUser
 ```
 
----
-
-## Sample KQL Queries
-
-### SSH Brute Force Detection
 
 ```kql
 Syslog

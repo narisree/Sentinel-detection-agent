@@ -156,11 +156,6 @@ Living-off-the-land binaries frequently used by attackers:
 | `esentutl.exe` | Database tool; used for ntds.dit extraction |
 | `ntdsutil.exe` | AD database utility; can dump ntds.dit |
 
----
-
-## Sample KQL Queries
-
-### Suspicious Child Process from Office Applications
 
 ```kql
 let OfficeBinaries = dynamic([

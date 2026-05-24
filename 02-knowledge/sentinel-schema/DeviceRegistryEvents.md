@@ -171,11 +171,6 @@ HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa
 // RunAsPPL = 1 protects lsass; disabling is suspicious
 ```
 
----
-
-## Sample KQL Queries
-
-### Persistence via Run Key
 
 ```kql
 DeviceRegistryEvents

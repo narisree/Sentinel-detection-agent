@@ -184,11 +184,6 @@
 | `0xC000015B` | Logon type not granted |
 | `0xC000019B` | Domain not found |
 
----
-
-## Sample KQL Queries
-
-### Brute Force Detection — Password Spray (Many Accounts, One Source)
 
 ```kql
 SecurityEvent

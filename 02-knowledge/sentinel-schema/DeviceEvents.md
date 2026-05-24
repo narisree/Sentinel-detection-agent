@@ -204,11 +204,6 @@ DeviceEvents
 | extend DnsQueryStatus    = tostring(AdditionalFields.DnsQueryStatus)
 ```
 
----
-
-## Sample KQL Queries
-
-### LSASS Credential Dumping Detection
 
 ```kql
 DeviceEvents

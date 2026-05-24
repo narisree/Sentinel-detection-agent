@@ -144,9 +144,6 @@ CommonSecurityLog
   ))  // NOTE: this heuristic doesn't handle all CEF escaping; prefer explicit parse
 ```
 
----
-
-## Sample KQL Queries
 
 ### Firewall — Outbound Connection to Known Malicious IPs
 

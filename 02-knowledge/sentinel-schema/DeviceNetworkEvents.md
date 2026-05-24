@@ -111,11 +111,6 @@
 | 9001/9030 | Tor | Tor network |
 | 31337 | Elite / Back Orifice | Historic C2 |
 
----
-
-## Sample KQL Queries
-
-### C2 Beaconing Detection (Regular Outbound Connections)
 
 ```kql
 // Detect regular connections to the same remote IP (beaconing pattern)

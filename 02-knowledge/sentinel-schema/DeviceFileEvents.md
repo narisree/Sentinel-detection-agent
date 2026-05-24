@@ -107,11 +107,6 @@ C:\Windows\SysWOW64\
 C:\Windows\Tasks\
 ```
 
----
-
-## Sample KQL Queries
-
-### Ransomware Staging Detection (Mass File Modifications)
 
 ```kql
 // High volume of file modifications in a short time window

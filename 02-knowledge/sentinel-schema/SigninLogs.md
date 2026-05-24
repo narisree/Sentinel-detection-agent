@@ -195,11 +195,6 @@ SigninLogs
 // For SigninLogs: the signing-in user IS the subject
 ```
 
----
-
-## Sample KQL Queries
-
-### Impossible Travel Detection
 
 ```kql
 let timeDelta = 1h;

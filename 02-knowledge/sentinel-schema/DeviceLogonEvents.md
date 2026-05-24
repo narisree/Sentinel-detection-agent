@@ -97,11 +97,6 @@ Note: In `DeviceLogonEvents`, `LogonType` is a **string** (unlike `SecurityEvent
 | `AccountExpired` | Account has expired |
 | `Other` | Other failure reason |
 
----
-
-## Sample KQL Queries
-
-### Lateral Movement Detection — Remote Logons from Unusual Source
 
 ```kql
 DeviceLogonEvents

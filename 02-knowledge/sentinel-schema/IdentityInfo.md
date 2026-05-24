@@ -66,9 +66,6 @@ There is no `IsSensitive` boolean field. Sensitivity is determined by the `Tags`
 
 String field. Check `isnotempty(BlastRadius)` to filter accounts that have any blast radius assigned.
 
----
-
-## Sample KQL
 
 ```kql
 // Latest snapshot of all enabled accounts with Password Never Expires
