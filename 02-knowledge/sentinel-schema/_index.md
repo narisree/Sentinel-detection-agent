@@ -2,7 +2,24 @@
 
 Index of all Microsoft Sentinel table schema files. Each file documents column names, types, descriptions, example values, and sample KQL queries for a specific log table.
 
-Last updated: 2026-05-23
+Last updated: 2026-05-24
+
+---
+
+## Bundled Reference CSV
+
+**File:** `sentinel_table_fields_reference.csv`
+**Coverage:** 4,809 field entries across 522 tables
+**Format:** `Table Name, Field Name, Field Type, Field Description`
+**Use:** First point of contact for any schema lookup before trying GitHub or asking the analyst.
+
+```bash
+# Lookup command — extract all fields for a table
+awk -F',' '$1=="<TableName>"' 02-knowledge/sentinel-schema/sentinel_table_fields_reference.csv
+```
+
+Tables confirmed present in CSV: SecurityEvent, SigninLogs, AuditLogs, Syslog, CommonSecurityLog, DeviceEvents, EmailEvents, ThreatIntelligenceIndicator, and ~514 more.
+Tables NOT in CSV (use GitHub fallback): DeviceProcessEvents, DeviceNetworkEvents, DeviceFileEvents, DeviceLogonEvents, DeviceRegistryEvents, IdentityInfo, UrlClickEvents.
 
 ---
 

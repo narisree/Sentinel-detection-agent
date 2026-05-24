@@ -73,9 +73,29 @@ For every table referenced in the query:
 
 **If the schema file does not exist:** follow this resolution order before asking the analyst:
 
-### Step 3a — Attempt internet schema lookup (try before asking the analyst)
+### Step 3a — Check the bundled CSV reference (instant, no network)
 
-Use `WebFetch` to retrieve the schema from the MicrosoftDocs GitHub repository. This source covers **all Sentinel and M365D tables** and is reliably accessible.
+Run a Bash lookup against `02-knowledge/sentinel-schema/sentinel_table_fields_reference.csv`:
+
+```bash
+awk -F',' '$1=="<TableName>"' \
+  02-knowledge/sentinel-schema/sentinel_table_fields_reference.csv
+```
+
+The CSV has columns: `Table Name, Field Name, Field Type, Field Description`
+It covers 522 tables including SecurityEvent, SigninLogs, AuditLogs, Syslog,
+CommonSecurityLog, DeviceEvents, EmailEvents, ThreatIntelligenceIndicator, and more.
+
+**If the table is found in the CSV:**
+1. Extract all rows for that table.
+2. Format into a schema file and save to `02-knowledge/sentinel-schema/<TableName>.md`.
+3. Update `02-knowledge/sentinel-schema/_index.md`.
+4. Note in one line: "Schema extracted from bundled CSV and saved."
+5. Continue to Step 4.
+
+### Step 3b — Attempt GitHub schema lookup (covers tables not in the CSV)
+
+If not in the CSV, use `WebFetch` to retrieve the schema from the MicrosoftDocs GitHub repository. This source covers **all Sentinel and M365D tables** and is reliably accessible.
 
 **Primary source for all tables:**
 

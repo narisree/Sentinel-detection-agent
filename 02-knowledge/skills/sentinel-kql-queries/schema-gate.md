@@ -8,21 +8,38 @@ Consult this file whenever a required table schema is not in `02-knowledge/senti
 
 ```
 Schema file exists in 02-knowledge/sentinel-schema/<TableName>.md?
-├── YES → proceed to Step 4, verify every field used against that file
-└── NO  → Step 3a: attempt WebFetch from trusted vendor documentation
-          ├── Fetch SUCCEEDS → save schema → proceed to Step 4
-          ├── Fetch FAILS, table is well-known (M365D, Sentinel built-in)
-          │   → save inferred schema (mark as Inferred) → proceed, Schema score = 3
-          └── Fetch FAILS, table is unknown/custom → STOP, execute ask below
+├── YES → verify all fields → proceed to Step 4
+└── NO  → Step 3a: grep the bundled CSV
+          ├── Found in CSV → extract, save schema → proceed to Step 4
+          └── Not in CSV → Step 3b: WebFetch from GitHub
+                          ├── Fetch SUCCEEDS → save schema → proceed to Step 4
+                          ├── Fetch FAILS, table is well-known
+                          │   → save inferred schema (Inferred flag) → proceed, Schema score = 3
+                          └── Fetch FAILS, table is unknown/custom
+                              → STOP → execute analyst ask below
 ```
 
 A query with hallucinated field names silently returns zero results in Sentinel. That is worse than no query.
 
 ---
 
-## Step 3a — Trusted Documentation Source
+## Step 3a — Bundled CSV Lookup (fastest, no network)
 
-Try WebFetch before asking the analyst. One URL pattern covers **all Sentinel and M365D tables**:
+The CSV at `02-knowledge/sentinel-schema/sentinel_table_fields_reference.csv` covers 522 tables.
+
+```bash
+# Extract all fields for a table
+awk -F',' '$1=="<TableName>"' \
+  02-knowledge/sentinel-schema/sentinel_table_fields_reference.csv
+```
+
+If the table is found, format the output into a `02-knowledge/sentinel-schema/<TableName>.md` file and proceed.
+
+---
+
+## Step 3b — GitHub Lookup (covers tables not in the CSV)
+
+One URL pattern covers **all Sentinel and M365D tables**:
 
 ```
 https://raw.githubusercontent.com/MicrosoftDocs/azure-monitor-docs/main/articles/azure-monitor/reference/tables/<tablename-lowercase>.md
@@ -31,13 +48,11 @@ https://raw.githubusercontent.com/MicrosoftDocs/azure-monitor-docs/main/articles
 **Do NOT use `learn.microsoft.com`** — it consistently returns 403.
 
 Examples:
-| Table | URL |
+| Table | URL suffix |
 |---|---|
-| `SecurityEvent` | `.../tables/securityevent.md` |
-| `EmailEvents` | `.../tables/emailevents.md` |
-| `UrlClickEvents` | `.../tables/urlclickevents.md` |
-| `DeviceProcessEvents` | `.../tables/deviceprocessevents.md` |
-| `SigninLogs` | `.../tables/signinlogs.md` |
+| `SecurityEvent` | `securityevent.md` |
+| `UrlClickEvents` | `urlclickevents.md` |
+| `DeviceProcessEvents` | `deviceprocessevents.md` |
 
 **If fetch returns 403/404 (unknown/custom table):** hard-block — ask the analyst to run `getschema`. Do not proceed with guessed fields.
 
