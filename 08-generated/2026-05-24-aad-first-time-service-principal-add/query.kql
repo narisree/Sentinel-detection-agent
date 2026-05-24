@@ -1,0 +1,63 @@
+// ============================================================
+// Detection: Azure AD — Service principal added by first-time actor
+// Description: This rule detects when a user adds a service principal to Azure AD
+//              and has no prior history of performing this action in the baseline
+//              window. First-time service principal additions may indicate a
+//              compromised account establishing a persistent OAuth backdoor, an
+//              insider threat registering an unauthorised application, or an
+//              attacker creating an alternate authentication path.
+//              If confirmed malicious, the attacker gains persistent access to the
+//              tenant via the service principal's credentials or delegated permissions.
+// Severity: Medium
+// Tactic: Persistence (TA0003)
+// Technique: T1136.003 — Create Account: Cloud Account
+// DataConnector: Azure Active Directory — Audit Logs
+// Table: AuditLogs
+// Author: SOC Detection Engineering
+// Version: 1.0
+// LastModified: 2026-05-24
+// ============================================================
+
+let BaselineWindow    = 90d;  // How far back to check for prior history
+let AlertWindow       = 1d;   // Current detection window
+let ExcludedAccounts  = dynamic([]);  // Service/automation accounts to suppress
+
+// Step 1 — Collect every user who has performed this action during the baseline period
+let PriorActors = AuditLogs
+    | where TimeGenerated between (ago(BaselineWindow) .. ago(AlertWindow))
+    | where OperationName =~ "Add service principal"
+    | where Result =~ "success"
+    | extend ActorUPN = tostring(InitiatedBy.user.userPrincipalName)
+    | where isnotempty(ActorUPN)
+    | distinct ActorUPN;
+
+// Step 2 — Find users who performed the action in the alert window, excluding prior actors
+AuditLogs
+| where TimeGenerated > ago(AlertWindow)
+| where OperationName =~ "Add service principal"
+| where Result =~ "success"
+| extend ActorUPN       = tostring(InitiatedBy.user.userPrincipalName)
+| extend ActorIPAddress = tostring(InitiatedBy.user.ipAddress)
+| extend SPDisplayName  = tostring(TargetResources[0].displayName)
+| extend SPId           = tostring(TargetResources[0].id)
+| extend SPType         = tostring(TargetResources[0].type)
+| where isnotempty(ActorUPN)
+| where ActorUPN !in (ExcludedAccounts)
+// Anti-join: keep only users with no prior history in the baseline window
+| join kind=leftanti (PriorActors) on ActorUPN
+| project
+    TimeGenerated,
+    ActorUPN,
+    ActorIPAddress,
+    SPDisplayName,
+    SPId,
+    SPType,
+    OperationName,
+    Result,
+    LoggedByService,
+    CorrelationId
+// Entity columns for Sentinel entity mapping
+| extend AccountName   = tostring(split(ActorUPN, "@")[0])
+| extend AccountDomain = tostring(split(ActorUPN, "@")[1])
+| extend IPAddress     = ActorIPAddress
+| sort by TimeGenerated desc
