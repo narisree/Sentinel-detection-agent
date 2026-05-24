@@ -1,0 +1,92 @@
+// ============================================================
+// Detection: Azure AD — Role assigned and removed within short time window
+// Description: Detects when a user is added to an Azure AD directory role and
+//              then removed from the same role within a configurable time window.
+//              Brief role assignments may indicate an attacker leveraging
+//              elevated access for a specific task and cleaning up to avoid
+//              detection, or an insider threat using temporary privilege escalation.
+//              If confirmed malicious, investigate all actions the target account
+//              performed during the window — the role may have been used to
+//              modify permissions, exfiltrate data, or register applications.
+// Severity: High
+// Tactic: Privilege Escalation (TA0004)
+// Technique: T1098.003 — Account Manipulation: Additional Cloud Roles
+// DataConnector: Azure Active Directory — Audit Logs
+// Table: AuditLogs
+// Author: SOC Detection Engineering
+// Version: 1.0
+// LastModified: 2026-05-24
+// ============================================================
+
+let RoleWindow     = 4h;   // Max time between add and remove to flag as suspicious
+let LookbackWindow = 1d;
+
+// Step 1 — Role addition events
+let RoleAdditions = AuditLogs
+    | where TimeGenerated > ago(LookbackWindow)
+    | where ActivityDisplayName == "Add member to role"
+    | where Result =~ "success"
+    | extend TargetUPN = tostring(TargetResources[0].userPrincipalName)
+    | where isnotempty(TargetUPN)
+    | mv-apply ModProp = TargetResources[0].modifiedProperties on (
+        where tostring(ModProp.displayName) == "Role.DisplayName"
+        | extend RoleName = replace_regex(tostring(ModProp.newValue), @'"', "")
+      )
+    | where isnotempty(RoleName)
+    | extend AddedBy = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+    | project
+        AddTime          = TimeGenerated,
+        TargetUPN,
+        RoleName,
+        AddedBy,
+        AddCorrelationId = CorrelationId;
+
+// Step 2 — Role removal events
+let RoleRemovals = AuditLogs
+    | where TimeGenerated > ago(LookbackWindow)
+    | where ActivityDisplayName == "Remove member from role"
+    | where Result =~ "success"
+    | extend TargetUPN = tostring(TargetResources[0].userPrincipalName)
+    | where isnotempty(TargetUPN)
+    | mv-apply ModProp = TargetResources[0].modifiedProperties on (
+        where tostring(ModProp.displayName) == "Role.DisplayName"
+        | extend RoleName = replace_regex(tostring(ModProp.newValue), @'"', "")
+      )
+    | where isnotempty(RoleName)
+    | extend RemovedBy = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+    | project
+        RemoveTime          = TimeGenerated,
+        TargetUPN,
+        RoleName,
+        RemovedBy,
+        RemoveCorrelationId = CorrelationId;
+
+// Step 3 — Correlate: same user + same role, removal within RoleWindow of addition
+RoleAdditions
+| join kind=inner (RoleRemovals) on TargetUPN, RoleName
+| where RemoveTime > AddTime
+| where (RemoveTime - AddTime) <= RoleWindow
+| extend DurationMinutes = datetime_diff("minute", RemoveTime, AddTime)
+| project
+    AddTime,
+    RemoveTime,
+    DurationMinutes,
+    TargetUPN,
+    RoleName,
+    AddedBy,
+    RemovedBy,
+    AddCorrelationId,
+    RemoveCorrelationId
+// Entity columns for Sentinel entity mapping
+| extend AccountName   = tostring(split(TargetUPN, "@")[0])
+| extend AccountDomain = tostring(split(TargetUPN, "@")[1])
+| sort by DurationMinutes asc
+
+// Cognitive linter: PASS
+// — TimeGenerated used (AuditLogs workspace table) ✓
+// — All fields verified against AuditLogs.md ✓
+// — kind=inner explicit on join ✓
+// — Dynamic fields cast with tostring() / parse_json(tostring()) ✓
+// — parse_json(tostring(InitiatedBy.user)) pattern applied (KM-007) ✓
+// — Header comment complete ✓
+// — Entity columns present ✓
