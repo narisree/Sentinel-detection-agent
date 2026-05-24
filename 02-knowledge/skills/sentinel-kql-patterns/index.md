@@ -27,6 +27,7 @@ Given the threat scenario, read the pattern sub-file listed in the rightmost col
 | LOLBin abused with suspicious arguments | `DeviceProcessEvents` | **10 — LOLBin** | `patterns/lolbin-regex.md` |
 | Encoded PowerShell / obfuscated command | `DeviceProcessEvents`, `DeviceEvents` | **11 — Regex** | `patterns/lolbin-regex.md` |
 | Identity hygiene posture (no time filter) | `IdentityInfo` | (list-based, no pattern template) | Use `let` blocks + `union isfuzzy=true` |
+| Email URL clicks — investigate unblocked clicks for a specific account | `EmailEvents` + `UrlClickEvents` | **Email-anchor join** — KM-005/KM-006 | `patterns/multi-table.md` + see email join pattern in `EmailEvents.md` |
 
 ---
 

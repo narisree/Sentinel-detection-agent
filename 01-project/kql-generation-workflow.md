@@ -13,8 +13,22 @@ Parse the analyst's request and extract:
 - **Target environment** — Windows, Linux, Azure AD, network device, endpoint?
 - **Tables in scope** — which Sentinel tables are relevant (cross-reference `02-knowledge/sentinel-schema/_index.md`)?
 - **Complexity rating** — Easy / Medium / Hard (drives confidence target and whether to ask clarifying questions).
+- **Query type** — Scheduled analytics rule OR Investigation query (see below).
 
 > **Skill:** Read `02-knowledge/skills/sentinel-kql-queries/index.md` to classify complexity and confirm table selection.
+
+### Query type classification (determine before drafting)
+
+| Signal in the request | Query type | Design implications |
+|---|---|---|
+| "detect", "alert when", "scheduled rule" | **Scheduled rule** | Aggregated output, threshold, entity columns, runs on a timer |
+| "review", "investigate", "identify for [account/entity]", "what happened to" | **Investigation query** | `let` vars for target entity + timeframe, event-level output (`project`), `sort by Timestamp desc`, no threshold |
+
+**If the request contains investigation signals:**
+- Define `let` variables for the target entity (e.g., `CompromizedEmailAddress`) and timeframe (`Timeframe`).
+- Return event-level rows — do NOT aggregate with `summarize`.
+- Sort by `Timestamp desc` as the final operator.
+- Ask before drafting: **"Is this for a specific account/entity or a broad detection across all users?"** — this one question determines the entire query structure.
 
 **For Hard detections:** Ask 1–2 clarifying questions before proceeding. Examples:
 - "Is this targeting Azure AD, on-prem AD, or both?"

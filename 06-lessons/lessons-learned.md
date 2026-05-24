@@ -50,6 +50,50 @@ Append-only log of lessons captured from analyst corrections, session observatio
 
 ---
 
+### LL-006 — "Email URL click" use cases require EmailEvents JOIN UrlClickEvents — not UrlClickEvents alone
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction (production query provided)
+- **Applies to:** Any detection or investigation involving URLs clicked from emails
+- **Lesson:** When the request is "emails with URLs, user clicked, URL wasn't blocked" — the anchor table is `EmailEvents` (filtered to `UrlCount != "0"`), joined to `UrlClickEvents` on `NetworkMessageId`. Starting with `UrlClickEvents` alone loses the email-level context (sender, subject, threat names) and the ability to filter to emails that actually contained URLs.
+- **Before:** Single-table `UrlClickEvents` query with `AccountUpn` aggregation
+- **After:** `EmailEvents | where UrlCount != "0" | join (UrlClickEvents | where ActionType != "ClickBlocked") on NetworkMessageId`
+
+---
+
+### LL-007 — Investigation queries require parameterised let variables and event-level output, not aggregation
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction (production query provided)
+- **Applies to:** Any query framed as "review", "investigate", "identify for a specific account"
+- **Lesson:** Investigation queries are parameterised (`let CompromizedEmailAddress = ""; let Timeframe = 2d;`), return event-level rows (`project`, `sort by Timestamp desc`), and are NOT aggregated into summaries by user. Aggregation is correct for scheduled analytics rules, not for triage tools.
+- **Before:** `summarize ClickCount, UniqueUrls... by AccountUpn` — collapsed to one row per user
+- **After:** `project Timestamp, Url, IPAddress, NetworkMessageId | sort by Timestamp desc` — one row per event
+
+---
+
+### LL-008 — ActionType != "ClickBlocked" is preferred over ActionType == "ClickAllowed" for Safe Links filtering
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction (production query provided)
+- **Applies to:** `UrlClickEvents` — any filter on Safe Links block status
+- **Lesson:** `ActionType != "ClickBlocked"` (negation) catches all unblocked variants including future new action types. `ActionType == "ClickAllowed"` only catches that exact value and misses any other allowed states. Always use negation when the intent is "was not blocked".
+- **Before:** `| where ActionType == "ClickAllowed"`
+- **After:** `| where ActionType != "ClickBlocked"`
+
+---
+
+### LL-009 — "Review recent [events]" signals an investigation query, not a scheduled detection
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction (production query provided)
+- **Applies to:** Step 1 — use case classification
+- **Lesson:** The phrase "review recent" (or "identify", "investigate", "for a specific account/email") signals an **investigation query**: parameterised let variables for the target entity and timeframe, event-level output, no threshold, sort by Timestamp desc. If this signal is present, ask: "Is this for a specific compromised account/entity or a broad detection across all users?" before drafting.
+- **Before:** Built a scheduled analytics rule with user-level aggregation
+- **After:** Built a parameterised investigation query with event-level output
+
+---
+
 ### LL-005 — Schema hard-block ask must be clean — do not volunteer guessed fields
 
 - **Date:** 2026-05-24

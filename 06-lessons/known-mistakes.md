@@ -77,4 +77,50 @@ IdentityInfo | where Tags != "[]"
 
 ---
 
+### KM-005 — "Email URL click" queries anchor to EmailEvents, not UrlClickEvents
+
+- **Applies to:** Any detection or investigation involving clicked URLs from email
+- **Mistake:** Starting from `UrlClickEvents` alone when the use case mentions "emails with URLs".
+- **Correct:** Start from `EmailEvents | where UrlCount != "0"`, then join to `UrlClickEvents on NetworkMessageId`. This preserves email context (sender, subject, ThreatNames) and correctly scopes to emails that had URLs.
+- **Check:** If the request mentions "emails with URLs" or "email URL clicks", always check whether `EmailEvents` should be the anchor table.
+
+```kql
+// WRONG — loses email context, cannot filter to emails with URLs
+UrlClickEvents
+| where ActionType != "ClickBlocked"
+| where Workload == "Email"
+
+// CORRECT — email-anchored, preserves sender/subject/threat context
+let EmailInformation = EmailEvents
+    | where Timestamp > ago(Timeframe)
+    | where UrlCount != "0"
+    | project Timestamp, NetworkMessageId, SenderMailFromAddress, SenderFromAddress,
+              SenderDisplayName, ThreatNames;
+EmailInformation
+| join (UrlClickEvents
+    | where ActionType != "ClickBlocked"
+    | where Workload == "Email"
+    | project Timestamp, Url, IPAddress, NetworkMessageId
+  ) on NetworkMessageId
+```
+
+---
+
+### KM-006 — ActionType == "ClickAllowed" misses unblocked variants; use ActionType != "ClickBlocked"
+
+- **Applies to:** `UrlClickEvents` — Safe Links click filtering
+- **Mistake:** Using `ActionType == "ClickAllowed"` to find unblocked clicks.
+- **Correct:** Use `ActionType != "ClickBlocked"`. The negation form catches all non-blocked states including any future action types, while the positive match only catches the single exact value.
+- **Check:** Every `UrlClickEvents` query filtering for "not blocked" must use `!= "ClickBlocked"`, not `== "ClickAllowed"`.
+
+```kql
+// WRONG — misses ClickBlockedByPolicy, future variants, etc.
+| where ActionType == "ClickAllowed"
+
+// CORRECT
+| where ActionType != "ClickBlocked"
+```
+
+---
+
 <!-- Additional known mistakes appended below as they are discovered. -->
