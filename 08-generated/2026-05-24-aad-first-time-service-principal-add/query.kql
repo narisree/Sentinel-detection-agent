@@ -14,50 +14,25 @@
 // DataConnector: Azure Active Directory — Audit Logs
 // Table: AuditLogs
 // Author: SOC Detection Engineering
-// Version: 1.0
+// Version: 2.0
 // LastModified: 2026-05-24
 // ============================================================
 
-let BaselineWindow    = 90d;  // How far back to check for prior history
-let AlertWindow       = 1d;   // Current detection window
-let ExcludedAccounts  = dynamic([]);  // Service/automation accounts to suppress
+// Collect all users who have performed this action in the baseline window
+let knownusers =
+    AuditLogs
+    | where TimeGenerated > ago(90d) and TimeGenerated < ago(1d)
+    | where OperationName == "Add service principal"
+    | extend Actor = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+    | where isnotempty(Actor)
+    | distinct Actor;
 
-// Step 1 — Collect every user who has performed this action during the baseline period
-let PriorActors = AuditLogs
-    | where TimeGenerated between (ago(BaselineWindow) .. ago(AlertWindow))
-    | where OperationName =~ "Add service principal"
-    | where Result =~ "success"
-    | extend ActorUPN = tostring(InitiatedBy.user.userPrincipalName)
-    | where isnotempty(ActorUPN)
-    | distinct ActorUPN;
-
-// Step 2 — Find users who performed the action in the alert window, excluding prior actors
+// Alert on first-time actors in the detection window
 AuditLogs
-| where TimeGenerated > ago(AlertWindow)
-| where OperationName =~ "Add service principal"
-| where Result =~ "success"
-| extend ActorUPN       = tostring(InitiatedBy.user.userPrincipalName)
-| extend ActorIPAddress = tostring(InitiatedBy.user.ipAddress)
-| extend SPDisplayName  = tostring(TargetResources[0].displayName)
-| extend SPId           = tostring(TargetResources[0].id)
-| extend SPType         = tostring(TargetResources[0].type)
-| where isnotempty(ActorUPN)
-| where ActorUPN !in (ExcludedAccounts)
-// Anti-join: keep only users with no prior history in the baseline window
-| join kind=leftanti (PriorActors) on ActorUPN
-| project
-    TimeGenerated,
-    ActorUPN,
-    ActorIPAddress,
-    SPDisplayName,
-    SPId,
-    SPType,
-    OperationName,
-    Result,
-    LoggedByService,
-    CorrelationId
-// Entity columns for Sentinel entity mapping
-| extend AccountName   = tostring(split(ActorUPN, "@")[0])
-| extend AccountDomain = tostring(split(ActorUPN, "@")[1])
-| extend IPAddress     = ActorIPAddress
-| sort by TimeGenerated desc
+| where TimeGenerated > ago(1d)
+| where OperationName == "Add service principal"
+| extend Actor = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+| where isnotempty(Actor)
+| where Actor !in (knownusers)
+| extend AppId = tostring(AdditionalDetails[1].value)
+| project TimeGenerated, Actor, AppId

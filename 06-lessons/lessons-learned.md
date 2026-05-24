@@ -103,4 +103,26 @@ Append-only log of lessons captured from analyst corrections, session observatio
 - **Before:** Asked for the schema AND listed assumed field names "for the analyst to confirm or correct."
 - **After:** Ask only — state the schema is missing, give the two fetch commands, wait for output. Zero guessed fields in the ask.
 
+---
+
+### LL-010 — `InitiatedBy.user` in AuditLogs requires `parse_json(tostring())` wrapping, not direct dot notation
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction (production query provided)
+- **Applies to:** `AuditLogs` — any query accessing `InitiatedBy.user.*` fields
+- **Lesson:** The `InitiatedBy.user` sub-object is sometimes stored as a doubly-serialized JSON string within the `InitiatedBy` dynamic column. Direct dot notation silently returns null. Always wrap with `parse_json(tostring(InitiatedBy.user)).fieldName` to force explicit re-parsing.
+- **Before:** `tostring(InitiatedBy.user.userPrincipalName)`
+- **After:** `tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)`
+
+---
+
+### LL-011 — For "Add service principal" operations, AppId is in `AdditionalDetails[1].value`
+
+- **Date:** 2026-05-24
+- **Provenance:** Analyst correction (production query provided)
+- **Applies to:** `AuditLogs` — "Add service principal" detections
+- **Lesson:** The Application (client) ID of the newly added service principal is in `AdditionalDetails[1].value`, not in `TargetResources`. Always project `AppId = tostring(AdditionalDetails[1].value)` in service principal detections — it is the primary field for follow-up investigation.
+- **Before:** `extend SPId = tostring(TargetResources[0].id)` — returns object GUID, not AppId
+- **After:** `extend AppId = tostring(AdditionalDetails[1].value)` — returns Application (client) ID
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->

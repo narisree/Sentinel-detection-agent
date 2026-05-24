@@ -33,14 +33,27 @@
 
 ## `InitiatedBy` Field Structure
 
+> **IMPORTANT — parse_json(tostring()) required (production-verified):**
+> `InitiatedBy.user` is sometimes stored as a doubly-serialized JSON string within the dynamic column.
+> Direct dot notation (`InitiatedBy.user.userPrincipalName`) silently returns null in those cases.
+> Always use `parse_json(tostring(InitiatedBy.user)).fieldName` to force explicit re-parsing.
+
 ```kql
-// Access user actor fields
+// CORRECT — production-verified pattern
 AuditLogs
-| extend ActorUPN          = tostring(InitiatedBy.user.userPrincipalName)
-| extend ActorDisplayName  = tostring(InitiatedBy.user.displayName)
-| extend ActorId           = tostring(InitiatedBy.user.id)
-| extend ActorIPAddress    = tostring(InitiatedBy.user.ipAddress)
-| extend ActorRoles        = tostring(InitiatedBy.user.roles)
+| extend Actor = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+
+// WRONG — direct dot notation; silently returns null when user sub-object is doubly-serialized
+// | extend Actor = tostring(InitiatedBy.user.userPrincipalName)
+```
+
+```kql
+// Access user actor fields (use parse_json(tostring()) pattern)
+AuditLogs
+| extend ActorUPN          = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+| extend ActorDisplayName  = tostring(parse_json(tostring(InitiatedBy.user)).displayName)
+| extend ActorId           = tostring(parse_json(tostring(InitiatedBy.user)).id)
+| extend ActorIPAddress    = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)
 
 // Access app actor fields (service principal / managed identity)
 | extend AppDisplayName    = tostring(InitiatedBy.app.displayName)
@@ -50,7 +63,7 @@ AuditLogs
 
 // Actor is either a user or app; one will be null
 | extend ActorName = coalesce(
-    tostring(InitiatedBy.user.userPrincipalName),
+    tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName),
     tostring(InitiatedBy.app.displayName),
     "Unknown"
   )
@@ -93,6 +106,35 @@ AuditLogs
 | mv-expand TargetResources
 | extend TargetName = tostring(TargetResources.displayName)
 | extend TargetType = tostring(TargetResources.type)
+```
+
+---
+
+## `AdditionalDetails` Field — Operation-Specific Values
+
+`AdditionalDetails` is a dynamic array of key-value pairs. Array index and key content vary by operation.
+
+### "Add service principal" operation
+
+```kql
+// AppId of the newly added service principal is at index [1]
+AuditLogs
+| where OperationName == "Add service principal"
+| extend AppId = tostring(AdditionalDetails[1].value)
+```
+
+> **Verified:** `AdditionalDetails[1].value` holds the Application (client) ID — the most useful field
+> for follow-up investigation of the service principal created.
+
+### Generic key-value access (when index is unknown)
+
+```kql
+// Expand and filter by key name
+AuditLogs
+| mv-expand AdditionalDetails
+| extend KeyName  = tostring(AdditionalDetails.key)
+| extend KeyValue = tostring(AdditionalDetails.value)
+| where KeyName == "AppId"
 ```
 
 ---

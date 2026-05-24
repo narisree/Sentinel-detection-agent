@@ -123,4 +123,38 @@ EmailInformation
 
 ---
 
+### KM-007 — Direct dot notation on `InitiatedBy.user` silently returns null in AuditLogs
+
+- **Applies to:** `AuditLogs` — any access to `InitiatedBy.user.*` fields
+- **Mistake:** Using direct dot notation `tostring(InitiatedBy.user.userPrincipalName)`.
+- **Correct:** Use `tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)`. The `.user` sub-object is sometimes stored as a doubly-serialized JSON string; without explicit re-parsing, the result is silently null.
+- **Check:** Every AuditLogs query accessing `InitiatedBy.user.*` must use the `parse_json(tostring())` wrapper pattern.
+
+```kql
+// WRONG — silently returns null when user sub-object is doubly-serialized
+| extend Actor = tostring(InitiatedBy.user.userPrincipalName)
+
+// CORRECT — production-verified
+| extend Actor = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+```
+
+---
+
+### KM-008 — AppId for "Add service principal" is in `AdditionalDetails[1].value`, not `TargetResources`
+
+- **Applies to:** `AuditLogs` — "Add service principal" operation
+- **Mistake:** Extracting `SPId` from `TargetResources[0].id`, which gives the object ID (GUID), not the Application ID.
+- **Correct:** The Application (client) ID is at `tostring(AdditionalDetails[1].value)`. This is the identifier used for follow-up investigation and exclusions.
+- **Check:** For any "Add service principal" detection, project `AppId = tostring(AdditionalDetails[1].value)`.
+
+```kql
+// WRONG — returns object GUID, not AppId
+| extend SPId = tostring(TargetResources[0].id)
+
+// CORRECT — returns Application (client) ID
+| extend AppId = tostring(AdditionalDetails[1].value)
+```
+
+---
+
 <!-- Additional known mistakes appended below as they are discovered. -->
