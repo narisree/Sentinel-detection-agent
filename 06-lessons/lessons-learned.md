@@ -202,4 +202,15 @@ Append-only log of lessons captured from analyst corrections, session observatio
 - **Before:** Correct queries on Tier-2 tables and all investigation queries returned exit-1 FAIL with a connector/schema error that had nothing to fix in the query.
 - **After:** KQL is always validated; the scheduled-rule schema check applies only where it is meaningful; the coverage boundary is documented (ADR-001 addendum) and unit-tested (`tools/tests/test_wrap.py`).
 
+---
+
+### LL-019 — Tier-2 schema inventory moved to a separate, on-demand file
+
+- **Date:** 2026-05-30
+- **Provenance:** Session observation (context-cost optimization)
+- **Applies to:** Session start, the schema gate (Step 3), saving new schema files
+- **Lesson:** `CLAUDE.md` `@import`s `02-knowledge/sentinel-schema/_index.md` at every session start. The ~80-row Tier-2 inventory table was bloating that eager load, so it was moved to `02-knowledge/sentinel-schema/_index-tier2.md`, which is **linked, not `@import`ed** (loaded on demand). `_index.md` keeps the Tier-1 table, the MDE `Timestamp` notes, the bundled-CSV section, and the scenario quick-lookup. Practical effects: (1) to check whether a Tier-2 table has a schema file, open `_index-tier2.md` (or just check for `<TableName>.md` directly — the schema gate does the latter and never needed the inventory loaded); (2) when **hand-saving a new Tier-1 schema**, add its row to `_index.md`'s Schema Files table as before; when **bulk-importing**, `tools/import-schemas.py` now appends to `_index-tier2.md` automatically. No functional change to the schema gate.
+- **Before:** `_index.md` was 212 lines; the full 78-row Tier-2 table loaded every session.
+- **After:** `_index.md` is ~136 lines; the Tier-2 inventory is one `Read` away when actually needed.
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->
