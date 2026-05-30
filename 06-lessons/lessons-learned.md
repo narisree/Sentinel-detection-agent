@@ -158,4 +158,15 @@ Append-only log of lessons captured from analyst corrections, session observatio
 - **Applies to:** All detections — Step 7 output format
 - **Lesson:** Every detection response must be a complete Sentinel Analytics Rule card with all fields the analyst needs to create the rule in the portal: Name, Description, Tactics & Techniques, Severity, Rule Query, Query Scheduling, Alert Threshold, Event Grouping, Create Incidents, Alert Grouping. Do NOT show step narration, confidence tables, test case tables, or linter commentary. All internal steps still run silently. Scheduling and grouping values are derived from severity using `metadata-standards.md §7-9`.
 
+---
+
+### LL-015 — Schema knowledge base has two tiers: hand-curated (Tier 1) and bulk-imported (Tier 2)
+
+- **Date:** 2026-05-30
+- **Provenance:** Bulk import via `tools/import-schemas.py`
+- **Applies to:** Step 3 schema gate, `02-knowledge/sentinel-schema/` lookups, citation hierarchy
+- **Lesson:** `02-knowledge/sentinel-schema/` now contains two tiers of schema files. **Tier 1** (14 files, no banner) is hand-curated with example values, value tables, parent-child detection context, and sample KQL — fully verified. **Tier 2** (78 files imported 2026-05-30, each carrying a "Bulk-imported, not hand-verified" banner at the top) provides authoritative column names and types only; time field and data connector are auto-derived and must be re-verified against the live workspace on first use. When a Tier 2 table is used in a real detection for the first time, promote it: drop the banner, add the value tables / example queries / detection context that distinguish Tier 1. The schema gate (Step 3 of `kql-generation-workflow.md`) treats both tiers as a successful local hit (no need to fall through to CSV or GitHub fetch), but Step 5 self-review must confirm the time field and connector when working from a Tier 2 file. See ADR-001 for the validation framework and `02-knowledge/sentinel-schema/_index.md` for the full Tier 2 inventory.
+- **Before:** Only 14 schema files existed; AAD, AWS, GCP, ASim, Storage, and ~60 other tables fell through to the bundled CSV on every lookup, requiring an awk pass and a manual save before proceeding.
+- **After:** 78 additional tables resolve to a local `.md` file immediately. The Tier 2 banner enforces honest citation hierarchy — the auto-derived metadata is flagged for verification rather than silently promoted to Tier 1's "non-negotiable" rank.
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->

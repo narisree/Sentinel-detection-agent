@@ -10,7 +10,9 @@ When two sources conflict, the higher-ranking source wins.
 
 1. **Analyst instruction in the current session** — Explicit correction or preference stated by the analyst overrides everything.
 2. **`06-lessons/known-mistakes.md`** — Captured errors with before/after evidence. Treat as hard constraints.
-3. **`02-knowledge/sentinel-schema/<TableName>.md`** — Verified field names. Non-negotiable for schema questions.
+3. **`02-knowledge/sentinel-schema/<TableName>.md`** — Verified field names. Non-negotiable for schema questions. Two tiers exist:
+   - **Tier 1** (hand-curated, no banner): column schema + example values + value tables + sample KQL. Fully verified, non-negotiable for all schema and metadata questions.
+   - **Tier 2** (banner: "Bulk-imported, not hand-verified"): column names and types are authoritative; the auto-derived time field and data connector should be confirmed against the live workspace on first use. Promote a Tier 2 file to Tier 1 on first detection-engineering use by enriching it (drop the banner, add value tables / example queries / detection context).
 4. **`02-knowledge/house-style/`** — Canonical patterns for query structure. Follow exactly unless (1) or (2) say otherwise.
 5. **`06-lessons/lessons-learned.md`** — Accumulated best practices. Strong guidance but overridable by higher ranks.
 6. **`01-project/` files** — Workflow and confidence framework. Procedural constraints.
