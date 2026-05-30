@@ -6,6 +6,13 @@ description: Hard rules on external services and client data
 
 This agent operates in an MSSP environment. Client data is sensitive and must never be persisted.
 
+> **Automated backstop (ADR-003).** A pre-commit guard scans staged changes for
+> public IPs, email addresses, and UNC paths and blocks the commit on a hit. It
+> is a low-false-positive net, **not** a substitute for the discipline below —
+> hostnames and client domain names are out of its scope and remain your
+> responsibility. Setup and limits: `tools/data-sovereignty/README.md`.
+> Run an audit any time with `python3 tools/data-sovereignty/scan.py --all`.
+
 ## NEVER store in any file in this knowledge base
 
 - Email addresses (any format)

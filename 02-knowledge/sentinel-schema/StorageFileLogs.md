@@ -64,12 +64,12 @@
 | `SmbCreditsConsumed` | int | The ingress or egress consumed by the request, in units of 64k. |
 | `SmbFileId` | string | The FileId associated with file or directory. Roughly analogous to an NTFS FileId. |
 | `SmbMessageID` | string | The connection relative MessageId. |
-| `SmbPersistentHandleID` | string | Persistent HandleID from an SMB2 Create request that survives network reconnects. Referenced in [MS-SMB2] 2.2.14.1 as SMB2_FILEID.Persistent. |
+| `SmbPersistentHandleID` | string | Persistent HandleID from an SMB2 Create request that survives network reconnects. Referenced in [MS-SMB2] 2.2.14.1 as SMB2_FILEID.Persistent. <!-- data-sovereignty-ok: spec section ref, not an IP --> |
 | `SmbPrimarySID` | string | Security Identifier of Kerberos Authenticated request |
 | `SmbSessionID` | string | The SMB2 SessionId established at SessionSetup time. |
 | `SmbStatusCode` | string | Status code for SMB in a hex format. |
 | `SmbTreeConnectID` | string | The SMB TreeConnectID established at TreeConnect time. |
-| `SmbVolatileHandleID` | string | Volatile HandleID from an SMB2 Create request that is recycled on network reconnects. Referenced in [MS-SMB2] 2.2.14.1 as SMB2_FILEID.Volatile. |
+| `SmbVolatileHandleID` | string | Volatile HandleID from an SMB2 Create request that is recycled on network reconnects. Referenced in [MS-SMB2] 2.2.14.1 as SMB2_FILEID.Volatile. <!-- data-sovereignty-ok: spec section ref, not an IP --> |
 | `SourceSystem` | string | The type of agent the event was collected by. For example, `OpsManager` for Windows agent, either direct connect or Operations Manager, `Linux` for all Linux agents, or `Azure` for Azure Diagnostics |
 | `StatusCode` | string | The HTTP status code for the request. If the request is interrupted, this value might be set to Unknown. |
 | `StatusText` | string | The status of the requested operation. |
