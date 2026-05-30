@@ -49,6 +49,41 @@ Total runtime: 5–10 minutes, almost all of it the Azure-Sentinel clone.
 
 ---
 
+## Install — manual (git clone, no script execution)
+
+Prefer this if your EDR flags `irm <url> | iex` (it downloads and runs a remote script), or you want control over each step. Same end result as the bootstrap, done by hand. Run in a fresh PowerShell after the prerequisites above are installed.
+
+Pick a location **not** under OneDrive (it will try to sync the ~600 MB Azure-Sentinel clone) — your user-profile root or Desktop is fine.
+
+```powershell
+# 1. Go to a non-OneDrive location
+cd $env:USERPROFILE            # or:  cd "$env:USERPROFILE\Desktop"
+
+# 2. Clone the knowledge base (team owner provides <repo-url>)
+git clone <repo-url> sentinel-detection-agent
+
+# 3. Clone Azure-Sentinel beside it (powers the script linter, ~600 MB).
+#    Same content the bootstrap fetches — done transparently here.
+git clone --depth 1 -c core.longpaths=true https://github.com/Azure/Azure-Sentinel.git Azure-Sentinel
+
+# 4. Point the validator at that clone
+"$env:USERPROFILE\Azure-Sentinel" | Set-Content sentinel-detection-agent\tools\azure-sentinel-path.txt -Encoding utf8
+
+# 5. (Optional) activate the data-sovereignty pre-commit guard
+cd sentinel-detection-agent
+git config core.hooksPath tools/data-sovereignty/hooks
+
+# 6. Launch
+claude
+```
+
+Notes:
+- If you cloned step 1 elsewhere, set step 4 to the **absolute path** of your Azure-Sentinel clone (this is exactly what `tools/azure-sentinel-path.txt` feeds `validate.py`).
+- **Skipping steps 3–4 is fine** — the agent works fully without Azure-Sentinel; the Step-5 linter just falls back to cognitive linting instead of Microsoft's script validators.
+- For a clean slate, empty `08-generated/` of the team's example detections before your first run.
+
+---
+
 ## What the script actually does
 
 Eleven numbered steps, each prints to the console:
@@ -97,55 +132,6 @@ The agent will:
 - Run the script linter (steps 9–10 of the workflow). If it fails, the agent surfaces the diagnostic and re-drafts.
 - Deliver a complete Sentinel Analytics Rule card: name, description, MITRE mapping, severity, query, scheduling, alert grouping, important notes.
 - Save the artefact to `08-generated/<date>-<slug>/query.kql` and update the index.
-
----
-
-## Day-2 operations
-
-### Updating the knowledge base
-
-The team owner publishes lessons, new schemas, and workflow updates by pushing to the shared GitHub repo. To pull updates:
-
-```powershell
-cd %USERPROFILE%\sentinel-detection-agent
-git pull
-```
-
-Merge conflicts in `06-lessons/` mean someone else updated lessons since your fork diverged. Resolve as you would any merge — your local lessons win unless a team standard supersedes them.
-
-### Where things live
-
-| Folder | Contents | Pull from team? |
-|---|---|---|
-| `01-project/` | Workflow, confidence framework | yes |
-| `02-knowledge/` | Schemas, MITRE, house style, skills | yes |
-| `04-decisions/` | ADRs (architecture decisions) | yes |
-| `06-lessons/` | Your personal lessons | **no — diverges per analyst** |
-| `08-generated/` | Your generated detections | **no — per-environment** |
-| `tools/` | Validator, importer | yes |
-| `tools/azure-sentinel-path.txt` | Your local Azure-Sentinel clone path | **no — user-specific (gitignored)** |
-
-### Updating Azure-Sentinel
-
-```powershell
-cd %USERPROFILE%\Azure-Sentinel
-git fetch
-git checkout origin/master
-```
-
-After updating, re-run the smoke test by generating a trivial detection in Claude Code and confirming it passes. If a breaking change in upstream tests trips us up, raise it with the team owner so they can adjust `bootstrap.ps1` and the pinned commit in `tools/sentinel-validate/README.md`.
-
-### Resetting to a fresh state
-
-If your `08-generated/` gets messy or you want to start over, just delete and re-clone:
-
-```powershell
-cd $env:USERPROFILE
-Remove-Item sentinel-detection-agent -Recurse -Force
-# Then re-run the irm | iex command
-```
-
-This will not affect your Azure-Sentinel clone or `06-lessons/` (until you also remove those).
 
 ---
 
