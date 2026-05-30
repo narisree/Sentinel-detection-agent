@@ -11,7 +11,7 @@
 $ErrorActionPreference = 'Stop'
 
 # ---- Owner: replace this with your org's repo URL before pushing ----
-$RepoUrl = '<<REPLACE_WITH_YOUR_REPO_URL>>'   # e.g. https://github.com/your-org/sentinel-detection-agent.git
+$RepoUrl = 'https://github.com/narisree/Sentinel-detection-agent.git'   # temporary; replace with the official org URL when ready
 $AzureSentinelUrl = 'https://github.com/Azure/Azure-Sentinel.git'
 $DefaultInstallRoot = Join-Path $env:USERPROFILE 'sentinel-detection-agent'
 
