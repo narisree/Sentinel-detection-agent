@@ -169,4 +169,15 @@ Append-only log of lessons captured from analyst corrections, session observatio
 - **Before:** Only 14 schema files existed; AAD, AWS, GCP, ASim, Storage, and ~60 other tables fell through to the bundled CSV on every lookup, requiring an awk pass and a manual save before proceeding.
 - **After:** 78 additional tables resolve to a local `.md` file immediately. The Tier 2 banner enforces honest citation hierarchy — the auto-derived metadata is flagged for verification rather than silently promoted to Tier 1's "non-negotiable" rank.
 
+---
+
+### LL-016 — LL-014's card-only delivery is now propagated repo-wide; confidence/test-cases are internal gates
+
+- **Date:** 2026-05-30
+- **Provenance:** Session observation (self-audit) — propagation of LL-014 per `self-improvement.md` step 2
+- **Applies to:** Step 7 delivery, confidence scoring, all rule/skill/profile files that described the deliverable
+- **Lesson:** LL-014 made the clean Analytics Rule card the only delivered artefact, but that decision had not been propagated, so six files still mandated displaying the confidence breakdown, test cases, and fix-list ("no exceptions"). These directly contradicted LL-014 and workflow Step 7. The resolution (ADR-002): **compute internally, surface on block.** The confidence rubric, test-case reasoning, linter, and critic still run on every generation as internal gates; only the *display* changes. The card is the deliverable; when a finding would block deployment (Medium-or-below composite, unverified field, material FP risk, required tuning) the agent surfaces a compact caveat in the card's "Important notes" (max 3 bullets) — never the full table. The unknown-schema hard block is unaffected.
+- **Before:** `confidence-framework.md`, `confidence-discipline.md`, `advisory-gates.md`, `profile.md`, `skills/sentinel-kql-queries/index.md`, and `confidence-scoring.md` all instructed the agent to show the confidence/test-case/fix-list tables in every delivery — contradicting LL-014.
+- **After:** All six reconciled to "score internally, surface on block." ADR-002 records the decision and the citation order; the confidence rubric is retained as an internal scoring tool.
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->
