@@ -63,8 +63,9 @@ false positives): `git commit --no-verify`.
 ## Scope & limits (read this)
 
 - **Authored content only.** The bundled Microsoft field-reference CSV
-  (`sentinel_table_fields_reference.csv`) and the raw `sentinel_table_columns/`
-  import dumps are **excluded** — they are vendor documentation (full of
+  (`sentinel_table_fields_reference.csv`) and the `sentinel_table_columns/`
+  import staging dir (transient — normally absent from the repo) are
+  **excluded** — they are vendor documentation (full of
   doc-sample IPs and dotted spec-section numbers), not authored content or
   client data.
 - **Hostnames and client domain names are NOT auto-detected.** Tokens like

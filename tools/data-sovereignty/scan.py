@@ -51,9 +51,12 @@ SUPPRESS_MARKER = "data-sovereignty-ok"
 # Paths never scanned:
 #   - VCS internals and this tool's own dir (example tokens by design)
 #   - Third-party reference blobs we did not author: the bundled Microsoft
-#     field-reference CSV and the raw column-dump import inputs. These are
-#     vendor documentation (full of doc-sample IPs and spec-section numbers
-#     like "[MS-SMB2] 2.2.14.1"), not client data and not authored content.
+#     field-reference CSV and the (transient) raw column-dump import staging
+#     dir. These are vendor documentation (full of doc-sample IPs and
+#     spec-section numbers like "[MS-SMB2] 2.2.14.1"), not client data and not
+#     authored content. The sentinel_table_columns/ exclusion is kept
+#     defensively for when the staging dir is recreated to import new tables
+#     (see tools/import-schemas.py); it is otherwise absent from the repo.
 #     The guard's job is our authored knowledge, lessons, sessions, and
 #     generated queries — see .claude/rules/data-sovereignty.md.
 EXCLUDED_PREFIXES = (

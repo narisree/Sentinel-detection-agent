@@ -21,6 +21,12 @@ awk -F',' '$1=="<TableName>"' 02-knowledge/sentinel-schema/sentinel_table_fields
 Tables confirmed present in CSV: SecurityEvent, SigninLogs, AuditLogs, Syslog, CommonSecurityLog, DeviceEvents, EmailEvents, ThreatIntelligenceIndicator, and ~514 more.
 Tables NOT in CSV (use GitHub fallback): DeviceProcessEvents, DeviceNetworkEvents, DeviceFileEvents, DeviceLogonEvents, DeviceRegistryEvents, IdentityInfo, UrlClickEvents.
 
+### Known import gaps
+
+The bulk schema import (`tools/import-schemas.py`) successfully produced the Tier 2 files below. One table could not be auto-imported and has no schema file yet:
+
+- **AzureDiagnostics** — Columns section not found at the MicrosoftDocs source (`.../tables/azurediagnostics.md`). If a detection needs it, resolve via the Step 3 schema gate (CSV → GitHub → ask the analyst). This table multiplexes many resource types, so confirm the relevant `Category` columns against the live workspace.
+
 ---
 
 ## Operation-Specific Extraction Patterns

@@ -11,6 +11,13 @@ Tier 2 files carry only the raw column schema + auto-derived metadata
 (time field, data connector). They are NOT enriched with example queries
 or value tables — that's Tier 1 work that happens on first use.
 
+NOTE: `sentinel_table_columns/` is a TRANSIENT STAGING dir, not kept in the
+repo. The initial bulk import (2026-05-30) is done and its outputs live in
+02-knowledge/sentinel-schema/, so the raw dumps were removed as redundant. To
+import NEW tables, recreate sentinel_table_columns/ with fresh
+`<TableName>_columns.md` dumps (a `# Title`, a `Source:` line, and a
+`| Column | Type | Description |` table) and re-run this script.
+
 Idempotent: re-running skips inputs whose output already exists.
 Stdlib only. See .claude/rules/library-judgment.md.
 """

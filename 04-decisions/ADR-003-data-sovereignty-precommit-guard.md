@@ -37,8 +37,9 @@ or documentation:
 Default mode scans only **added lines in the index**, so the guard governs new
 commits without forcing a cleanup of pre-existing vendor examples. An `--all`
 audit mode and a `data-sovereignty-ok` inline suppression marker are provided.
-The bundled Microsoft field-reference CSV and the raw `sentinel_table_columns/`
-import dumps are excluded as third-party documentation, not authored content.
+The bundled Microsoft field-reference CSV and the (transient, normally absent)
+`sentinel_table_columns/` import staging dir are excluded as third-party
+documentation, not authored content.
 
 ## Rejected alternatives
 
