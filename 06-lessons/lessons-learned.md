@@ -191,4 +191,15 @@ Append-only log of lessons captured from analyst corrections, session observatio
 - **Before:** The highest-stakes rule (no client data in the KB) was enforced cognitively only — a pasted log sample could leak a client IP into history with nothing to stop it.
 - **After:** A deterministic backstop blocks the most detectable leak classes at commit time, consistent with the advisory-gate philosophy applied elsewhere.
 
+---
+
+### LL-018 — Step 5 linter is query-type aware and degrades gracefully on unmapped connectors
+
+- **Date:** 2026-05-30
+- **Provenance:** Session observation (tooling improvement) — see ADR-001 addendum
+- **Applies to:** Step 5 validation, all detections on Tier-2 tables, investigation queries
+- **Lesson:** The script linter previously wrapped every query as a scheduled rule and only knew 15 connector IDs, so a correct query on any unmapped table (all AAD/AWS/GCP/Storage/ASim families) or any investigation query produced a misleading **exit-1 FAIL**. Now `wrap-kql-to-yaml.py` classifies the query (`scheduled` vs `investigation`; explicit `// QueryType:` header wins, else inferred — empty-string `let` param ⇒ investigation, `summarize` ⇒ scheduled) and writes a `template.meta.json` sidecar. `validate.py` always runs the KQL test but **skips** the scheduled-only schema test for investigation queries and unmapped connectors, printing `// Linter: script (KqlValidationsTests) + cognitive (<reason>)`. When you see that mode line, the **KQL is validated** but the connector/structure portion fell back to cognitive review — run the Step 5 checklist for those items. Twelve Tier-2 tables were added to the connector map using **only already-proven connector IDs**; other families stay unmapped and degrade gracefully rather than guess. Optionally add `// QueryType: Investigation` (or `Scheduled`) to a query header to make classification explicit instead of inferred.
+- **Before:** Correct queries on Tier-2 tables and all investigation queries returned exit-1 FAIL with a connector/schema error that had nothing to fix in the query.
+- **After:** KQL is always validated; the scheduled-rule schema check applies only where it is meaningful; the coverage boundary is documented (ADR-001 addendum) and unit-tested (`tools/tests/test_wrap.py`).
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->

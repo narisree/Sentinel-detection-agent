@@ -27,6 +27,7 @@ CONFIGURATION
 """
 
 import argparse
+import json
 import os
 import pathlib
 import shutil
@@ -91,6 +92,17 @@ def run_wrapper(rule_folder):
         sys.exit(EXIT_FAIL)
     print(result.stdout.strip())
     return rule_folder / "template.yaml"
+
+
+def load_meta(rule_folder):
+    """Read template.meta.json written by the wrapper; tolerate its absence."""
+    meta_file = rule_folder / "template.meta.json"
+    if not meta_file.is_file():
+        return {}
+    try:
+        return json.loads(meta_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 def copy_custom_tables(azure_sentinel_path):
@@ -192,6 +204,28 @@ def main():
     print(f"== Wrapping {rule_folder.name} ==")
     template_yaml = run_wrapper(rule_folder)
 
+    # The wrapper writes template.meta.json describing whether this is a
+    # scheduled rule or an investigation query, and whether its tables map to a
+    # known connectorId. We use it to decide which test projects apply, so an
+    # investigation query or an unmapped-connector table is not reported as a
+    # false FAIL (see ADR-001 addendum / ADR-003 graceful-degradation note).
+    meta = load_meta(rule_folder)
+    query_type = meta.get("query_type", "scheduled")
+    connector_mapped = meta.get("connector_mapped", True)
+    unmapped = meta.get("unmapped_tables", [])
+
+    # The DetectionTemplateSchemaValidation project checks scheduled-rule schema
+    # (connectorId, frequency, period, severity). It is meaningful only for a
+    # scheduled rule whose connector is known. Otherwise skip it and fall back
+    # to cognitive review for that portion — the KQL itself is still validated.
+    run_schema = (query_type == "scheduled") and connector_mapped
+    if query_type != "scheduled":
+        schema_skip_reason = f"investigation query — scheduled-rule schema N/A"
+    elif not connector_mapped:
+        schema_skip_reason = f"connector not in local map for {unmapped} — cognitive fallback for schema/connector"
+    else:
+        schema_skip_reason = None
+
     print(f"== Staging into {azure_sentinel_path} ==")
     staged_yaml = stage_yaml(template_yaml, azure_sentinel_path, rule_folder.name)
     staged_custom = copy_custom_tables(azure_sentinel_path)
@@ -202,13 +236,18 @@ def main():
     yaml_basename = staged_yaml.name
 
     try:
+        print(f"\n  query type: {query_type}")
         print("\n== KqlvalidationsTests (KQL + Structure) ==")
         kql_out, kql_err, kql_rc = run_dotnet_test(KQL_TESTS_DIR, yaml_basename, azure_sentinel_path, dotnet_exe)
         kql_findings = filter_failures(kql_out, yaml_basename)
 
-        print("\n== DetectionTemplateSchemaValidation (YAML schema) ==")
-        schema_out, schema_err, schema_rc = run_dotnet_test(SCHEMA_TESTS_DIR, yaml_basename, azure_sentinel_path, dotnet_exe)
-        schema_findings = filter_failures(schema_out, yaml_basename)
+        if run_schema:
+            print("\n== DetectionTemplateSchemaValidation (YAML schema) ==")
+            schema_out, schema_err, schema_rc = run_dotnet_test(SCHEMA_TESTS_DIR, yaml_basename, azure_sentinel_path, dotnet_exe)
+            schema_findings = filter_failures(schema_out, yaml_basename)
+        else:
+            print(f"\n== DetectionTemplateSchemaValidation (YAML schema) — SKIPPED: {schema_skip_reason} ==")
+            schema_out, schema_err, schema_rc, schema_findings = "", "", 0, []
 
         print("\n== Report ==")
         # rc != 0 with no findings AND no "Failed" markers usually means
@@ -222,7 +261,7 @@ def main():
             return "Failed!" in out or "FAIL]" in out
 
         kql_failed = looks_like_real_failure(kql_out, kql_rc, kql_findings)
-        schema_failed = looks_like_real_failure(schema_out, schema_rc, schema_findings)
+        schema_failed = run_schema and looks_like_real_failure(schema_out, schema_rc, schema_findings)
         ok = not kql_failed and not schema_failed
 
         if kql_findings:
@@ -235,7 +274,10 @@ def main():
                 print(f"  {ln}")
 
         if ok:
-            print("PASS - // Linter: script (KqlValidationsTests + DetectionTemplate{Structure,Schema}Validation)")
+            if run_schema:
+                print("PASS - // Linter: script (KqlValidationsTests + DetectionTemplate{Structure,Schema}Validation)")
+            else:
+                print(f"PASS - // Linter: script (KqlValidationsTests) + cognitive ({schema_skip_reason})")
             return EXIT_PASS
 
         # On real failure with no parsed findings, surface the tail of dotnet's
