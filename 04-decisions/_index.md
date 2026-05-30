@@ -8,7 +8,7 @@ ADRs document significant design decisions made during the development of this k
 
 | ID | Date | Title | Status |
 |----|------|-------|--------|
-| — | — | No ADRs recorded yet | — |
+| [ADR-001](./ADR-001-azure-sentinel-validation-as-step-5-linter.md) | 2026-05-30 | Azure-Sentinel validation as the Step 5 linter | Accepted |
 
 ---
 

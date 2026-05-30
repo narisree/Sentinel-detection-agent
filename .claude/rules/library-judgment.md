@@ -23,7 +23,9 @@ Microsoft Sentinel's KQL runtime provides a rich set of functions. Always prefer
 
 ## KQL linting
 
-The preferred linter is a local Python script (`tools/kql-lint.py` if present). If not present, fall back to cognitive linting via the checklist in `01-project/kql-generation-workflow.md` Step 5. Always state which mode was used: `// Linter: script` or `// Linter: cognitive`.
+The preferred linter is `tools/sentinel-validate/validate.py`, which wraps each generated `query.kql` as a Sentinel Analytics Rule YAML and runs Microsoft's official `KqlvalidationsTests` (KQL + structure) plus `DetectionTemplateSchemaValidation`. Requires a one-time setup: .NET SDK + a pinned local clone of `github.com/Azure/Azure-Sentinel`. See `tools/sentinel-validate/README.md` and ADR-001 for the contract and limits (the script catches syntax/structure errors, NOT semantic value bugs — those stay covered by `06-lessons/`).
+
+If the script is unavailable (exit code 3 — missing SDK or clone), fall back to cognitive linting via the checklist in `01-project/kql-generation-workflow.md` Step 5. Always state which mode ran: `// Linter: script (KqlValidationsTests + DetectionTemplate{Structure,Schema}Validation)` or `// Linter: cognitive (fallback)`.
 
 ## When to propose a new tool
 

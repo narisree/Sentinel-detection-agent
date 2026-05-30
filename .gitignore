@@ -1,0 +1,5 @@
+# User-specific path to the local Azure-Sentinel clone (see tools/sentinel-validate/README.md)
+tools/azure-sentinel-path.txt
+
+# Generated Sentinel Analytics Rule YAML wrappers (rebuilt by validate.py on demand)
+08-generated/*/template.yaml

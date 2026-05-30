@@ -189,9 +189,27 @@ Write the KQL following house style:
 
 ---
 
-## Step 5 — Self-Review (Cognitive Linter)
+## Step 5 — Self-Review (Script Linter, cognitive fallback)
 
-Run through this checklist before calling the query done:
+### Primary: script linter
+
+Run the Azure-Sentinel validation wrapper against the saved rule folder:
+
+```powershell
+python tools/sentinel-validate/validate.py 08-generated/<rule>/
+```
+
+The script wraps `query.kql` as a Sentinel Analytics Rule YAML and runs Microsoft's official `KqlvalidationsTests` (KQL + structure) and `DetectionTemplateSchemaValidation` (YAML schema). See `tools/sentinel-validate/README.md` and ADR-001.
+
+- **Exit 0 (PASS):** state `// Linter: script (KqlValidationsTests + DetectionTemplate{Structure,Schema}Validation)` and proceed to Step 6.
+- **Exit 1 (FAIL):** fix the reported syntax / unknown table / unknown column / structure / schema issue and re-run before delivery.
+- **Exit 3 (tool unavailable — missing .NET SDK or Azure-Sentinel clone):** use the fallback checklist below.
+
+**Coverage limit:** the script validates syntax, table/column existence, and YAML structure. It does NOT catch semantic value bugs (string-vs-boolean, doubly-serialized JSON access, `newValue` vs `oldValue`, threshold appropriateness). The lessons in `06-lessons/lessons-learned.md` and `06-lessons/known-mistakes.md` remain authoritative and must be applied during Steps 1–4. The script is a backstop, not a guarantee.
+
+### Fallback: cognitive checklist
+
+Use when the script linter is unavailable. Run through this checklist before calling the query done:
 
 | Check | Pass? |
 |-------|-------|
@@ -205,7 +223,7 @@ Run through this checklist before calling the query done:
 | Header comment block complete | |
 | Entity columns present for Sentinel entity mapping | |
 
-State: `// Cognitive linter: PASS` or list each failing check.
+State: `// Linter: cognitive (fallback)` with PASS or list each failing check.
 
 ---
 
