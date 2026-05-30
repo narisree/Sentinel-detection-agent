@@ -1,6 +1,6 @@
 # Confidence Framework
 
-Every generated detection must include a structured confidence breakdown using this framework. Never deliver a query without it.
+Every generated detection must be **scored** with this framework on every run. The score is an **internal quality gate** — computed silently and **not** shown in the delivered Analytics Rule card. It surfaces to the analyst only when a finding would block deployment (composite in the Medium band or below, an unverified/inferred field, a material false-positive risk, or required tuning), and then only as a compact caveat in the card's "Important notes" (max 3 bullets). See ADR-002 and workflow Step 7. The full breakdown table is not displayed.
 
 ---
 
@@ -96,9 +96,9 @@ Composite = (SchemaScore × 0.30)
 
 ---
 
-## Output Template
+## Internal Scoring Block
 
-Include this block verbatim at the end of every generated detection:
+Use this block when scoring internally. Do **not** paste it into the delivered card. Reach for it only when a blocking finding must be communicated — and even then, distil the one or two critical rows into a compact "Important notes" caveat rather than reproducing the whole table (ADR-002):
 
 ```
 ## Confidence Breakdown

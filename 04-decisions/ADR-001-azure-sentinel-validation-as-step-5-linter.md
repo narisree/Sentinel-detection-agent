@@ -69,3 +69,42 @@ Use a community Python port of the Kusto language service. No .NET dependency.
 ## Pinned upstream commit
 
 Recorded in `tools/sentinel-validate/README.md` after the first successful integration run.
+
+## Addendum — 2026-05-30 — coverage boundary and graceful degradation
+
+The original wrapper mapped 15 tables to connector IDs and fell through to a
+placeholder `connectorId: Unknown` for everything else. With the schema KB now
+at ~94 tables, that meant a **correct** query on any unmapped table (all
+`AAD*`, `AWS*`, `GCP*`, `Storage*`, `ASim*`, …) produced a `DetectionTemplateSchemaValidation`
+failure — surfaced as exit 1 (FAIL), i.e. "fix the query and re-run" — when in
+fact nothing in the query was wrong; only the connector was unmapped. The
+wrapper also emitted `kind: Scheduled` for **every** query, so investigation
+queries (parameterised, event-level, no threshold — workflow Step 1) had no
+meaningful Step-5 path.
+
+Three changes close this without inventing connector IDs:
+
+1. **Query-type awareness.** `wrap-kql-to-yaml.py` classifies each query as
+   `scheduled` or `investigation` (explicit `// QueryType:` header wins;
+   otherwise inferred — an empty-string `let` parameter ⇒ investigation, a
+   `summarize` ⇒ scheduled) and writes a `template.meta.json` sidecar.
+2. **Graceful degradation in `validate.py`.** The KQL test (`KqlvalidationsTests`)
+   always runs. The scheduled-only `DetectionTemplateSchemaValidation` is
+   **skipped** when the query is an investigation query, or when a table's
+   connector is not in the local map — printing a `cognitive fallback` note for
+   that portion instead of failing. An unmapped connector or an investigation
+   query no longer masquerades as a broken query. Mode strings:
+   - `// Linter: script (KqlValidationsTests + DetectionTemplate{Structure,Schema}Validation)` — full pass.
+   - `// Linter: script (KqlValidationsTests) + cognitive (<reason>)` — KQL validated, schema portion fell back.
+3. **Conservative map expansion.** Twelve Tier-2 tables were added, reusing
+   **only connector IDs already proven in the map** (`AzureActiveDirectory`,
+   `AzureActiveDirectoryIdentityProtection`, `MicrosoftThreatProtection`). No
+   new, unverified connector ID strings were introduced; the authoritative list
+   lives in the Azure-Sentinel clone, which is not present in the web-session
+   container (the linter exits 3 there). Remaining families (AWS, GCP, Storage,
+   ASim, Office, …) stay unmapped and rely on graceful fallback until they can
+   be checked against a real clone.
+
+Logic is unit-tested in `tools/tests/test_wrap.py` (classification, connector
+status, header/MITRE parsing). The dotnet path is unchanged and still exits 3
+when the clone/SDK is absent. See LL-018.

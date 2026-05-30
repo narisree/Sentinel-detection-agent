@@ -201,7 +201,9 @@ python tools/sentinel-validate/validate.py 08-generated/<rule>/
 
 The script wraps `query.kql` as a Sentinel Analytics Rule YAML and runs Microsoft's official `KqlvalidationsTests` (KQL + structure) and `DetectionTemplateSchemaValidation` (YAML schema). See `tools/sentinel-validate/README.md` and ADR-001.
 
-- **Exit 0 (PASS):** state `// Linter: script (KqlValidationsTests + DetectionTemplate{Structure,Schema}Validation)` and proceed to Step 6.
+- **Exit 0 (PASS):** state the mode line the script prints, then proceed to Step 6. Two PASS modes exist:
+  - `// Linter: script (KqlValidationsTests + DetectionTemplate{Structure,Schema}Validation)` — full validation (scheduled rule, connector mapped).
+  - `// Linter: script (KqlValidationsTests) + cognitive (<reason>)` — KQL validated, but the scheduled-rule schema check was skipped because the query is an **investigation query** or its table's **connector is not in the local map**. The KQL is verified; apply the cognitive checklist to the connector/structure portion (ADR-001 addendum).
 - **Exit 1 (FAIL):** fix the reported syntax / unknown table / unknown column / structure / schema issue and re-run before delivery.
 - **Exit 3 (tool unavailable — missing .NET SDK or Azure-Sentinel clone):** use the fallback checklist below.
 

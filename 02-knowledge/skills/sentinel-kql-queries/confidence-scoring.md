@@ -47,7 +47,9 @@ Composite     = 4.30  → High
 
 ---
 
-## Required Output Block (paste verbatim)
+## Internal Scoring Block (do NOT paste into the card)
+
+Score with this block internally. It is **not** part of the delivered Analytics Rule card (ADR-002). When the composite lands in the Medium band or below, distil the critical row(s) into the card's "Important notes" caveat rather than reproducing the table.
 
 ```
 ## Confidence Breakdown
@@ -76,5 +78,5 @@ Composite     = 4.30  → High
 
 - A single **guessed** field → Schema accuracy = 1, regardless of how clean the logic is.
 - Never inflate scores because "the query looks good overall."
-- If confidence is Medium or below, include a numbered Fix-List.
+- If confidence is Medium or below, build a numbered fix-list internally and surface its critical items as an "Important notes" caveat in the card (ADR-002) — do not append the full table.
 - After an analyst correction, **update the score** — do not carry forward a stale "High" rating.

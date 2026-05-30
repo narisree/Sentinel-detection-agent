@@ -8,6 +8,29 @@ Wraps each generated rule's `query.kql` into a Sentinel Analytics Rule YAML temp
 | `KqlvalidationsTests` (`DetectionTemplateStructureValidationTests`) | Missing/invalid YAML structure (entityMappings, kind, trigger, etc.)   |
 | `DetectionTemplateSchemaValidation`                   | YAML schema: connector IDs, frequency, period, severity, threshold     |
 
+## Query type & connector coverage (graceful degradation)
+
+The wrapper classifies each query as **scheduled** or **investigation** and
+records whether its tables map to a known `connectorId`, in a `template.meta.json`
+sidecar. `validate.py` uses this so a correct query is never reported as a false
+FAIL (ADR-001 addendum):
+
+- `KqlvalidationsTests` (KQL syntax + structure) **always runs**.
+- `DetectionTemplateSchemaValidation` (scheduled-rule schema: connectorId,
+  frequency, period) runs **only** for a scheduled rule whose connector is in
+  the local map. For an **investigation query** or an **unmapped-connector**
+  table it is skipped, and the run prints
+  `// Linter: script (KqlValidationsTests) + cognitive (<reason>)` — the KQL is
+  still validated; apply the cognitive checklist to the connector/structure part.
+
+**Connector map coverage is intentionally partial.** The map (`CONNECTOR_MAP` in
+`wrap-kql-to-yaml.py`) only contains connector IDs proven against the upstream
+repo. Tables outside it (many AWS/GCP/Storage/ASim/Office families) degrade to
+the cognitive fallback above rather than guess a connector ID. Expand the map
+only with IDs verified against your Azure-Sentinel clone. Classification and
+mapping logic are unit-tested in `tools/tests/test_wrap.py`
+(`python3 -m unittest discover -s tools/tests`).
+
 ## What this is NOT
 
 The parser cannot catch semantic correctness bugs — the ones captured in `06-lessons/`:

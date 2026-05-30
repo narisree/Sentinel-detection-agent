@@ -169,4 +169,48 @@ Append-only log of lessons captured from analyst corrections, session observatio
 - **Before:** Only 14 schema files existed; AAD, AWS, GCP, ASim, Storage, and ~60 other tables fell through to the bundled CSV on every lookup, requiring an awk pass and a manual save before proceeding.
 - **After:** 78 additional tables resolve to a local `.md` file immediately. The Tier 2 banner enforces honest citation hierarchy — the auto-derived metadata is flagged for verification rather than silently promoted to Tier 1's "non-negotiable" rank.
 
+---
+
+### LL-016 — LL-014's card-only delivery is now propagated repo-wide; confidence/test-cases are internal gates
+
+- **Date:** 2026-05-30
+- **Provenance:** Session observation (self-audit) — propagation of LL-014 per `self-improvement.md` step 2
+- **Applies to:** Step 7 delivery, confidence scoring, all rule/skill/profile files that described the deliverable
+- **Lesson:** LL-014 made the clean Analytics Rule card the only delivered artefact, but that decision had not been propagated, so six files still mandated displaying the confidence breakdown, test cases, and fix-list ("no exceptions"). These directly contradicted LL-014 and workflow Step 7. The resolution (ADR-002): **compute internally, surface on block.** The confidence rubric, test-case reasoning, linter, and critic still run on every generation as internal gates; only the *display* changes. The card is the deliverable; when a finding would block deployment (Medium-or-below composite, unverified field, material FP risk, required tuning) the agent surfaces a compact caveat in the card's "Important notes" (max 3 bullets) — never the full table. The unknown-schema hard block is unaffected.
+- **Before:** `confidence-framework.md`, `confidence-discipline.md`, `advisory-gates.md`, `profile.md`, `skills/sentinel-kql-queries/index.md`, and `confidence-scoring.md` all instructed the agent to show the confidence/test-case/fix-list tables in every delivery — contradicting LL-014.
+- **After:** All six reconciled to "score internally, surface on block." ADR-002 records the decision and the citation order; the confidence rubric is retained as an internal scoring tool.
+
+---
+
+### LL-017 — Data sovereignty now has an automated pre-commit backstop
+
+- **Date:** 2026-05-30
+- **Provenance:** Session observation (tooling added) — see ADR-003
+- **Applies to:** Every commit; all authored knowledge, lesson, session, and generated files
+- **Lesson:** A stdlib-only scanner (`tools/data-sovereignty/scan.py`) is wired as a git pre-commit hook (`git config core.hooksPath tools/data-sovereignty/hooks`). It blocks commits that add public IPv4 addresses, email addresses, or UNC paths to the repo. RFC1918/loopback/doc-range IPs and placeholder/vendor email domains are allowlisted; the bundled CSV and the transient `sentinel_table_columns/` import staging dir (normally absent — see ADR re: its removal) are excluded as third-party docs. It is a low-false-positive net, **not** a replacement for the data-sovereignty discipline — **hostnames and client domain names are out of scope and stay a cognitive check.** Suppress a confirmed false positive with a `data-sovereignty-ok` comment on the line; audit anytime with `scan.py --all`.
+- **Before:** The highest-stakes rule (no client data in the KB) was enforced cognitively only — a pasted log sample could leak a client IP into history with nothing to stop it.
+- **After:** A deterministic backstop blocks the most detectable leak classes at commit time, consistent with the advisory-gate philosophy applied elsewhere.
+
+---
+
+### LL-018 — Step 5 linter is query-type aware and degrades gracefully on unmapped connectors
+
+- **Date:** 2026-05-30
+- **Provenance:** Session observation (tooling improvement) — see ADR-001 addendum
+- **Applies to:** Step 5 validation, all detections on Tier-2 tables, investigation queries
+- **Lesson:** The script linter previously wrapped every query as a scheduled rule and only knew 15 connector IDs, so a correct query on any unmapped table (all AAD/AWS/GCP/Storage/ASim families) or any investigation query produced a misleading **exit-1 FAIL**. Now `wrap-kql-to-yaml.py` classifies the query (`scheduled` vs `investigation`; explicit `// QueryType:` header wins, else inferred — empty-string `let` param ⇒ investigation, `summarize` ⇒ scheduled) and writes a `template.meta.json` sidecar. `validate.py` always runs the KQL test but **skips** the scheduled-only schema test for investigation queries and unmapped connectors, printing `// Linter: script (KqlValidationsTests) + cognitive (<reason>)`. When you see that mode line, the **KQL is validated** but the connector/structure portion fell back to cognitive review — run the Step 5 checklist for those items. Twelve Tier-2 tables were added to the connector map using **only already-proven connector IDs**; other families stay unmapped and degrade gracefully rather than guess. Optionally add `// QueryType: Investigation` (or `Scheduled`) to a query header to make classification explicit instead of inferred.
+- **Before:** Correct queries on Tier-2 tables and all investigation queries returned exit-1 FAIL with a connector/schema error that had nothing to fix in the query.
+- **After:** KQL is always validated; the scheduled-rule schema check applies only where it is meaningful; the coverage boundary is documented (ADR-001 addendum) and unit-tested (`tools/tests/test_wrap.py`).
+
+---
+
+### LL-019 — Tier-2 schema inventory moved to a separate, on-demand file
+
+- **Date:** 2026-05-30
+- **Provenance:** Session observation (context-cost optimization)
+- **Applies to:** Session start, the schema gate (Step 3), saving new schema files
+- **Lesson:** `CLAUDE.md` `@import`s `02-knowledge/sentinel-schema/_index.md` at every session start. The ~80-row Tier-2 inventory table was bloating that eager load, so it was moved to `02-knowledge/sentinel-schema/_index-tier2.md`, which is **linked, not `@import`ed** (loaded on demand). `_index.md` keeps the Tier-1 table, the MDE `Timestamp` notes, the bundled-CSV section, and the scenario quick-lookup. Practical effects: (1) to check whether a Tier-2 table has a schema file, open `_index-tier2.md` (or just check for `<TableName>.md` directly — the schema gate does the latter and never needed the inventory loaded); (2) when **hand-saving a new Tier-1 schema**, add its row to `_index.md`'s Schema Files table as before; when **bulk-importing**, `tools/import-schemas.py` now appends to `_index-tier2.md` automatically. No functional change to the schema gate.
+- **Before:** `_index.md` was 212 lines; the full 78-row Tier-2 table loaded every session.
+- **After:** `_index.md` is ~136 lines; the Tier-2 inventory is one `Read` away when actually needed.
+
 <!-- Entries added below as lessons are captured. Newest at bottom. -->

@@ -33,11 +33,11 @@ Sanitize all examples. If an analyst pastes a log sample containing client data,
 - **Medium detections (known technique, minor complexity):** ≥ 90% first-pass accuracy.
 - **Hard detections (novel technique, multi-table, no precedent):** ≥ 75-85%, clearly flagged.
 - **Never hallucinate field names.** If a field is not in a verified schema, stop and ask.
-- **Never refuse to deliver.** Always provide output + confidence breakdown + fix-list.
+- **Never refuse to deliver.** Always deliver the Analytics Rule card. Confidence and fix-list are scored internally and surfaced as an "Important notes" caveat only when a finding would block deployment (ADR-002).
 
 ## Interaction model
 
 - Analysts provide: detection requirement (threat description, MITRE technique, or both), and optionally: log samples, field schemas, environment-specific context.
-- Agent provides: validated KQL query, test cases, confidence breakdown, what to test first.
+- Agent provides: a complete Sentinel Analytics Rule card (validated KQL query plus scheduling and grouping). Confidence, test cases, and the fix-list are computed internally and surfaced only when a finding would block deployment.
 - Analyst tests in Sentinel and reports back any errors or false positives.
 - Agent captures feedback in `06-lessons/` and delivers a corrected query.

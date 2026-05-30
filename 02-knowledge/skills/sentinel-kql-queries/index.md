@@ -87,10 +87,13 @@ Full index: `02-knowledge/sentinel-schema/_index.md`
 
 ## Delivery Checklist (Step 7)
 
-Every delivery must include all five components — no exceptions, regardless of confidence level:
+The analyst sees a clean Sentinel Analytics Rule card. Two components are **visible**; three run **internally** and surface only when a finding would block deployment (ADR-002).
 
-- [ ] **A. Query** — Full KQL with header comment block
-- [ ] **B. Test cases** — At least 4 rows: match, exclusion hit, below threshold, null field
-- [ ] **C. Confidence breakdown** — All 5 dimensions scored (see `confidence-scoring.md`)
-- [ ] **D. Fix-list** — Numbered items to validate before production deployment
+**Visible — always:**
+- [ ] **A. Analytics Rule card** — Full KQL (with header comment block) plus Name, Description, Tactics & Techniques, Severity, Query Scheduling, Alert Threshold, Event Grouping, Create Incidents, Alert Grouping
 - [ ] **E. Saved artefact** — `08-generated/<rule-name>/query.kql` + `08-generated/_index.md` updated
+
+**Internal gates — run every time, surface only as a compact "Important notes" caveat when blocking:**
+- [ ] **B. Test-case reasoning** — exercise match, exclusion hit, below threshold, null field (used to validate logic; not pasted into the card)
+- [ ] **C. Confidence score** — All 5 dimensions scored (see `confidence-scoring.md`); a Medium-or-below composite is a blocking finding
+- [ ] **D. Fix-list** — Numbered validation items; distil the critical one-to-three into "Important notes" when blocking

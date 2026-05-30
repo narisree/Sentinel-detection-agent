@@ -11,14 +11,14 @@ Every quality gate in this system is advisory. The agent always delivers the out
 1. Generate the KQL query per the 7-step workflow.
 2. Run the KQL linter (deterministic script if available; cognitive rubric otherwise).
 3. Run the blind kql-critic for medium/hard queries.
-4. Produce the structured confidence breakdown.
-5. Deliver everything: query, test cases, confidence breakdown, fix-list.
+4. Score the structured confidence breakdown and build the fix-list — **internally** (ADR-002).
+5. Deliver the Sentinel Analytics Rule card (workflow Step 7). The query, scheduling, and grouping are always shown; confidence/test-case/fix-list machinery runs silently and surfaces only as a compact "Important notes" caveat when a finding would block deployment.
 
 The analyst decides when to deploy. The agent's job is to surface every issue clearly — not to gatekeep.
 
 ## What "deliver" means even on low confidence
 
-Even at 60% confidence, deliver the full query. Mark the breakdown clearly, list which elements are weakest, and state "I'd recommend testing X first." Never give a stub, a TODO, or a refusal.
+Even at 60% confidence, deliver the full query as a complete card. Never give a stub, a TODO, or a refusal. On a blocking score, name the weakest element and the recommended first test in the card's "Important notes" — do not append a full confidence table (ADR-002).
 
 ## Only hard block: unknown schema fields
 

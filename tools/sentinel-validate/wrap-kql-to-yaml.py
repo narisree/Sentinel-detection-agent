@@ -12,6 +12,7 @@ Writes <rule-folder>/template.yaml. Idempotent: re-runs overwrite the file.
 """
 
 import argparse
+import json
 import pathlib
 import re
 import sys
@@ -48,9 +49,19 @@ TACTIC_MAP = {
     "Impact":                "Impact",
 }
 
-# Table → (connectorId, dataType). Connector IDs match Azure-Sentinel's
-# valid list; tables outside this map fall through with a placeholder that
-# the schema validator will flag (intentional — surfaces gaps).
+# Table → (connectorId, dataType). Connector IDs match Azure-Sentinel's valid
+# list. Tables outside this map fall through to an "Unknown" placeholder; rather
+# than failing the run, validate.py treats an unmapped connector as a
+# cognitive-fallback for the schema/structure portion and still validates the
+# KQL itself (see ADR-001 addendum and ADR-003 graceful-degradation note).
+#
+# Expansion policy (conservative): only add tables whose connectorId is ALREADY
+# PROVEN in this map. The 2026-05-30 additions below reuse the existing
+# AzureActiveDirectory / AzureActiveDirectoryIdentityProtection /
+# MicrosoftThreatProtection IDs with dataType = table name (the standard
+# advanced-hunting / Log Analytics convention). No new, unverified connectorId
+# strings are introduced — those stay unmapped and rely on graceful fallback
+# until they can be checked against a real Azure-Sentinel clone.
 CONNECTOR_MAP = {
     "SecurityEvent":        ("SecurityEvents",                          "SecurityEvent"),
     "SigninLogs":           ("AzureActiveDirectory",                    "SigninLogs"),
@@ -66,6 +77,23 @@ CONNECTOR_MAP = {
     "EmailEvents":          ("MicrosoftThreatProtection",               "EmailEvents"),
     "UrlClickEvents":       ("MicrosoftThreatProtection",               "UrlClickEvents"),
     "IdentityInfo":         ("AzureActiveDirectoryIdentityProtection",  "IdentityInfo"),
+
+    # --- 2026-05-30 conservative additions (proven connectorIds only) ---
+    # Azure AD sign-in / audit family → AzureActiveDirectory
+    "AADNonInteractiveUserSignInLogs": ("AzureActiveDirectory",         "AADNonInteractiveUserSignInLogs"),
+    "AADManagedIdentitySignInLogs":    ("AzureActiveDirectory",         "AADManagedIdentitySignInLogs"),
+    "AADServicePrincipalSignInLogs":   ("AzureActiveDirectory",         "AADServicePrincipalSignInLogs"),
+    "AADProvisioningLogs":             ("AzureActiveDirectory",         "AADProvisioningLogs"),
+    # Entra ID Protection risk family → AzureActiveDirectoryIdentityProtection
+    "AADRiskyUsers":                   ("AzureActiveDirectoryIdentityProtection", "AADRiskyUsers"),
+    "AADUserRiskEvents":               ("AzureActiveDirectoryIdentityProtection", "AADUserRiskEvents"),
+    "AADRiskyServicePrincipals":       ("AzureActiveDirectoryIdentityProtection", "AADRiskyServicePrincipals"),
+    "AADServicePrincipalRiskEvents":   ("AzureActiveDirectoryIdentityProtection", "AADServicePrincipalRiskEvents"),
+    # M365 Defender advanced-hunting family → MicrosoftThreatProtection
+    "AlertEvidence":                   ("MicrosoftThreatProtection",    "AlertEvidence"),
+    "IdentityLogonEvents":             ("MicrosoftThreatProtection",    "IdentityLogonEvents"),
+    "CloudAppEvents":                  ("MicrosoftThreatProtection",    "CloudAppEvents"),
+    "DeviceImageLoadEvents":           ("MicrosoftThreatProtection",    "DeviceImageLoadEvents"),
 }
 
 # Recognised entity-projection columns → (entityType, identifier, columnName).
@@ -136,6 +164,36 @@ def map_techniques(technique_raw):
 
 def parse_tables(table_raw):
     return [t.strip() for t in re.split(r"[,/]", table_raw) if t.strip()]
+
+
+# Empty-string `let` parameter (e.g. `let CompromizedEmailAddress = "";`) is the
+# signature of a parameterised investigation query — see LL-007.
+_EMPTY_LET_PARAM_RE = re.compile(r'let\s+\w+\s*=\s*["\']\s*["\']\s*;')
+
+
+def classify_query_type(fields, kql_body):
+    """Return 'investigation' or 'scheduled'.
+
+    An explicit `// QueryType:` header wins. Otherwise infer: an empty-string
+    `let` parameter marks an investigation query; an aggregation (`summarize`)
+    marks a scheduled rule; default to scheduled.
+    """
+    explicit = fields.get("QueryType", "").strip().lower()
+    if explicit.startswith("investig"):
+        return "investigation"
+    if explicit.startswith("sched"):
+        return "scheduled"
+    if _EMPTY_LET_PARAM_RE.search(kql_body):
+        return "investigation"
+    if re.search(r"\bsummarize\b", kql_body):
+        return "scheduled"
+    return "scheduled"
+
+
+def connector_status(tables):
+    """Return (mapped_bool, unmapped_table_list) for the query's tables."""
+    unmapped = [t for t in tables if t not in CONNECTOR_MAP]
+    return (len(unmapped) == 0 and bool(tables)), unmapped
 
 
 def yaml_scalar(s):
@@ -220,11 +278,28 @@ def main():
 
     out_file = folder / "template.yaml"
     out_file.write_text(yaml_text, encoding="utf-8")
+
+    tables = parse_tables(fields.get("Table", ""))
+    query_type = classify_query_type(fields, body)
+    mapped_ok, unmapped = connector_status(tables)
+
+    # Sidecar consumed by validate.py to decide which test projects apply.
+    meta = {
+        "query_type": query_type,
+        "connector_mapped": mapped_ok,
+        "unmapped_tables": unmapped,
+        "tables": tables,
+    }
+    meta_file = folder / "template.meta.json"
+    meta_file.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+
     print(f"Wrote {out_file}")
     print(f"  id={rule_id}")
-    print(f"  severity={fields.get('Severity')}  tables={parse_tables(fields.get('Table',''))}")
-    mapped = sum(len(v) for v in detect_entity_mappings(body).values())
-    print(f"  entityMappings columns: {mapped}")
+    print(f"  severity={fields.get('Severity')}  tables={tables}")
+    entity_cols = sum(len(v) for v in detect_entity_mappings(body).values())
+    print(f"  entityMappings columns: {entity_cols}")
+    print(f"  queryType={query_type}")
+    print(f"  connectorMapped={mapped_ok}" + (f"  unmapped={unmapped}" if unmapped else ""))
 
 
 if __name__ == "__main__":

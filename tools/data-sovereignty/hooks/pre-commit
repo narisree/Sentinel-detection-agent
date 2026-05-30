@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+# Data-sovereignty pre-commit guard.
+#
+# Blocks a commit that would add client-identifying data (public IPs, email
+# addresses, UNC paths) to the knowledge base. See
+# .claude/rules/data-sovereignty.md and tools/data-sovereignty/README.md.
+#
+# Activated by:  git config core.hooksPath tools/data-sovereignty/hooks
+# Bypass once (use sparingly):  git commit --no-verify
+
+repo_root=$(git rev-parse --show-toplevel) || exit 0
+python3 "$repo_root/tools/data-sovereignty/scan.py" --staged
+status=$?
+
+if [ "$status" -eq 1 ]; then
+    echo ""
+    echo "Commit blocked by the data-sovereignty guard."
+    echo "Fix the lines above, or re-run with: git commit --no-verify (only for confirmed false positives)."
+fi
+
+# Exit 2 (environment error, e.g. python3 missing) must not silently pass.
+[ "$status" -eq 0 ] && exit 0
+exit "$status"
