@@ -2,6 +2,8 @@
 
 A persistent, self-improving Claude Code agent for SOC L2 detection engineers. Generates validated, MITRE ATT&CK-aligned KQL queries for Microsoft Sentinel.
 
+> **Getting started?** See [INSTALL.md](./INSTALL.md) for the one-line `irm | iex` install, prerequisites, and what the bootstrap script does step-by-step.
+
 ## What this agent does
 
 - Generates production-ready KQL Sentinel detection rules from threat descriptions or MITRE technique requests.
