@@ -1,0 +1,77 @@
+// ============================================================
+// Detection: Azure AD — Sign-in from new IP and/or new application vs 14-day baseline
+// Description: Compares the last 24h of successful Azure AD sign-ins (interactive +
+//              non-interactive) against a 14-day baseline that excludes the last 24h.
+//              Flags sign-ins whose (User, IP) and/or (User, App) combination was not
+//              observed in the baseline window. Risk is assigned per result row: High
+//              when both IP and App are new for the user, Medium when only the IP is
+//              new, Low when only the App is new on a known IP.
+// Severity: Medium
+// Tactic: Initial Access (TA0001)
+// Technique: T1078.004 — Valid Accounts: Cloud Accounts
+// DataConnector: Azure Active Directory — Sign-in Logs
+// Table: SigninLogs, AADNonInteractiveUserSignInLogs
+// Author: SOC Detection Engineering
+// Version: 1.0
+// LastModified: 2026-05-30
+// ============================================================
+let LookbackTotal = 14d;
+let RecentWindow  = 1d;
+let AllSignins = materialize(
+    union isfuzzy=true
+        (SigninLogs
+            | where TimeGenerated >= ago(LookbackTotal)
+            | where ResultType == "0"
+            | where isnotempty(IPAddress) and isnotempty(UserPrincipalName)
+            | project TimeGenerated, UserPrincipalName, UserId, IPAddress,
+                      AppDisplayName, AppId,
+                      SignInType = "Interactive"),
+        (AADNonInteractiveUserSignInLogs
+            | where TimeGenerated >= ago(LookbackTotal)
+            | where ResultType == "0"
+            | where isnotempty(IPAddress) and isnotempty(UserPrincipalName)
+            | project TimeGenerated, UserPrincipalName, UserId, IPAddress,
+                      AppDisplayName, AppId,
+                      SignInType = "NonInteractive")
+);
+let BaselineUserIP = AllSignins
+    | where TimeGenerated between (ago(LookbackTotal) .. ago(RecentWindow))
+    | distinct UserPrincipalName, IPAddress
+    | extend BaselineUserIPKey = strcat(tolower(UserPrincipalName), "|", IPAddress)
+    | project BaselineUserIPKey;
+let BaselineUserApp = AllSignins
+    | where TimeGenerated between (ago(LookbackTotal) .. ago(RecentWindow))
+    | distinct UserPrincipalName, AppDisplayName
+    | extend BaselineUserAppKey = strcat(tolower(UserPrincipalName), "|", tolower(AppDisplayName))
+    | project BaselineUserAppKey;
+AllSignins
+| where TimeGenerated > ago(RecentWindow)
+| extend UserIPKey  = strcat(tolower(UserPrincipalName), "|", IPAddress)
+| extend UserAppKey = strcat(tolower(UserPrincipalName), "|", tolower(AppDisplayName))
+| extend IsNewIP  = UserIPKey  !in (BaselineUserIP)
+| extend IsNewApp = UserAppKey !in (BaselineUserApp)
+| where IsNewIP or IsNewApp
+| extend RiskLevel = case(
+    IsNewIP and IsNewApp, "High",
+    IsNewIP,              "Medium",
+                          "Low"
+  )
+| extend RiskOrder = case(RiskLevel == "High", 1, RiskLevel == "Medium", 2, 3)
+| summarize
+    SignInCount  = count(),
+    FirstSeen    = min(TimeGenerated),
+    LastSeen     = max(TimeGenerated),
+    SignInTypes  = make_set(SignInType, 5),
+    AppIds       = make_set(AppId, 5),
+    UserIds      = make_set(UserId, 5)
+  by UserPrincipalName, IPAddress, AppDisplayName, IsNewIP, IsNewApp, RiskLevel, RiskOrder
+| extend AccountName      = tostring(split(UserPrincipalName, "@")[0])
+| extend AccountUPNSuffix = tostring(split(UserPrincipalName, "@")[1])
+| extend AadUserId        = tostring(UserIds[0])
+| project RiskLevel, RiskOrder,
+          UserPrincipalName, AccountName, AccountUPNSuffix, AadUserId,
+          IPAddress, AppDisplayName, AppId = tostring(AppIds[0]),
+          IsNewIP, IsNewApp,
+          SignInCount, FirstSeen, LastSeen, SignInTypes
+| sort by RiskOrder asc, SignInCount desc
+| project-away RiskOrder

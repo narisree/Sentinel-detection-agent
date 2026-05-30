@@ -12,6 +12,8 @@ One folder per generated detection rule. Each folder contains `query.kql` and op
 | [2026-05-24-o365-unblocked-url-click/](./2026-05-24-o365-unblocked-url-click/) | 2026-05-24 | Office 365 — User clicked unblocked URL from email | Medium | T1566.002 — Phishing: Spearphishing Link | Medium |
 | [2026-05-24-aad-first-time-service-principal-add/](./2026-05-24-aad-first-time-service-principal-add/) | 2026-05-24 | Azure AD — Service principal added by first-time actor | Medium | T1136.003 — Create Account: Cloud Account | High |
 | [2026-05-24-aad-role-add-remove-short-window/](./2026-05-24-aad-role-add-remove-short-window/) | 2026-05-24 | Azure AD — Role assigned and removed within short time window | High | T1098.003 — Account Manipulation: Additional Cloud Roles | High |
+| [2026-05-30-powershell-disable-defender/](./2026-05-30-powershell-disable-defender/) | 2026-05-30 | MDE — PowerShell attempt to disable Microsoft Defender components or services | High | T1562.001 — Impair Defenses: Disable or Modify Tools | High |
+| [2026-05-30-aad-new-ip-app-baseline-14d/](./2026-05-30-aad-new-ip-app-baseline-14d/) | 2026-05-30 | Azure AD — Sign-in from new IP and/or new application vs 14-day baseline | Medium | T1078.004 — Valid Accounts: Cloud Accounts | High |
 
 ---
 

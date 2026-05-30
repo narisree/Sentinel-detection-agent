@@ -1,0 +1,51 @@
+// ============================================================
+// Detection: MDE — PowerShell attempt to disable Microsoft Defender components or services
+// Description: Detects PowerShell (powershell.exe, pwsh.exe, powershell_ise.exe) invoking
+//              cmdlets or commands that disable, uninstall, or weaken Microsoft Defender —
+//              including Set-MpPreference toggles, exclusion additions, service stop/disable
+//              of WinDefend/WdNisSvc/Sense/SecurityHealthService, and feature uninstall.
+// Severity: High
+// Tactic: Defense Evasion (TA0005)
+// Technique: T1562.001 — Impair Defenses: Disable or Modify Tools
+// DataConnector: Microsoft Defender for Endpoint
+// Table: DeviceProcessEvents
+// Author: SOC Detection Engineering
+// Version: 1.0
+// LastModified: 2026-05-30
+// ============================================================
+let DefenderServices = dynamic([
+    "WinDefend",             // Microsoft Defender Antivirus Service
+    "WdNisSvc",              // Defender Network Inspection Service
+    "Sense",                 // Defender for Endpoint (MDE) Service
+    "SecurityHealthService", // Windows Security Health Service
+    "MpsSvc",                // Windows Defender Firewall
+    "MsSecFlt"               // Microsoft Security Filter
+]);
+let DefenderCmdlets = dynamic([
+    "Set-MpPreference", "Add-MpPreference", "Remove-MpPreference",
+    "Uninstall-WindowsFeature", "Disable-WindowsOptionalFeature",
+    "Stop-Service", "Set-Service", "Suspend-Service"
+]);
+DeviceProcessEvents
+| where Timestamp >= ago(1h)
+| where FileName in~ ("powershell.exe", "pwsh.exe", "powershell_ise.exe")
+// Pre-filter with has_any before regex (index-accelerated)
+| where ProcessCommandLine has_any (DefenderCmdlets)
+    or ProcessCommandLine has_any (DefenderServices)
+// Precise disable patterns
+| where ProcessCommandLine matches regex @"(?i)Set-MpPreference\s+[^;|]*-Disable\w+\s+\$?(true|1)\b"
+    or ProcessCommandLine matches regex @"(?i)Set-MpPreference\s+[^;|]*-MAPSReporting\s+(Disabled|0)\b"
+    or ProcessCommandLine matches regex @"(?i)Set-MpPreference\s+[^;|]*-SubmitSamplesConsent\s+(NeverSend|2)\b"
+    or ProcessCommandLine matches regex @"(?i)Add-MpPreference\s+[^;|]*-Exclusion(Path|Process|Extension|IpAddress)\b"
+    or ProcessCommandLine matches regex @"(?i)(Uninstall-WindowsFeature|Disable-WindowsOptionalFeature)[^;|]*Windows-Defender"
+    or ProcessCommandLine matches regex @"(?i)(Stop-Service|Suspend-Service)[^;|]*\b(WinDefend|WdNisSvc|Sense|SecurityHealthService|MpsSvc|MsSecFlt)\b"
+    or ProcessCommandLine matches regex @"(?i)Set-Service[^;|]*\b(WinDefend|WdNisSvc|Sense|SecurityHealthService|MpsSvc)\b[^;|]*-StartupType\s+Disabled\b"
+    or ProcessCommandLine matches regex @"(?i)\bsc(\.exe)?\s+(stop|config|delete)\s+(WinDefend|WdNisSvc|Sense|SecurityHealthService|MpsSvc)\b"
+| extend AccountUpn = iff(isempty(AccountUpn), strcat(AccountName, "@", AccountDomain), AccountUpn)
+| extend HostName = tostring(split(DeviceName, ".")[0])
+| project Timestamp, DeviceName, HostName,
+          AccountName, AccountDomain, AccountUpn,
+          FileName, ProcessCommandLine, ProcessId,
+          InitiatingProcessFileName, InitiatingProcessCommandLine, InitiatingProcessAccountName,
+          SHA256
+| sort by Timestamp desc
