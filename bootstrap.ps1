@@ -219,6 +219,6 @@ Write-Host @"
     3. Ask for a detection, e.g.:
        "Detect PowerShell encoded command execution on Windows endpoints"
 
-  See INSTALL.md for day-2 operations (updating, lessons, troubleshooting).
+  See INSTALL.md for usage and troubleshooting.
 ================================================================
 "@ -ForegroundColor Green
